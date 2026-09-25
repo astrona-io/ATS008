@@ -1,0 +1,19 @@
+metadata:
+  name: "ats-008-lab-005"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-kyverno"
+      description: "Installs Kyverno onto the kind cluster via Helm at baseline values"
+      type: "file"
+      source: "bootstrap/01-install-kyverno.sh"
+
+validation:
+  scripts:
+    - name: "verify-controller-extra-args"
+      description: "Confirms the background and reports controllers run with the configured extraArgs"
+      type: "file"
+      source: "validation/validate-completed.sh"

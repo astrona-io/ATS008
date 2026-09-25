@@ -1,0 +1,23 @@
+metadata:
+  name: "ats-008-lab-004"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-kyverno"
+      description: "Installs Kyverno onto the kind cluster"
+      type: "file"
+      source: "bootstrap/01-install-kyverno.sh"
+    - name: "capstone-020-setup"
+      description: "Creates the checkout namespace, require-owner-label, and require-cost-center-label ClusterPolicies"
+      type: "file"
+      source: "bootstrap/02-seed-policies.sh"
+
+validation:
+  scripts:
+    - name: "verify-section-020-capstone"
+      description: "Confirms both PolicyExceptions admit their targets while control resources are still blocked"
+      type: "file"
+      source: "validation/validate-completed.sh"

@@ -1,0 +1,23 @@
+metadata:
+  name: "ats-008-lab-012"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-kyverno"
+      description: "Installs Kyverno onto the kind cluster via Helm at a baseline configuration"
+      type: "file"
+      source: "bootstrap/01-install-kyverno.sh"
+    - name: "seed-policy"
+      description: "Creates the finance namespace and the require-cost-center-label ClusterPolicy"
+      type: "file"
+      source: "bootstrap/02-seed-policy.sh"
+
+validation:
+  scripts:
+    - name: "verify-backup-upgrade-verify-flow"
+      description: "Confirms the policy backup, the upgraded revision/settings, and the untouched pre-existing policy"
+      type: "file"
+      source: "validation/validate-completed.sh"

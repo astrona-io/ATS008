@@ -1,0 +1,19 @@
+metadata:
+  name: "ats-008-lab-001"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "add-helm-repo"
+      description: "Adds and updates the kyverno Helm repo; Kyverno is not pre-installed"
+      type: "file"
+      source: "bootstrap/01-add-helm-repo.sh"
+
+validation:
+  scripts:
+    - name: "verify-helm-install"
+      description: "Confirms Kyverno was installed via Helm with the required replicas and resource requests"
+      type: "file"
+      source: "validation/validate-completed.sh"

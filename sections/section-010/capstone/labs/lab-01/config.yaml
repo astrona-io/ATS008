@@ -1,0 +1,19 @@
+metadata:
+  name: "ats-008-lab-002"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "add-helm-repo"
+      description: "Adds and updates the kyverno Helm repo; Kyverno is not pre-installed"
+      type: "file"
+      source: "bootstrap/01-add-helm-repo.sh"
+
+validation:
+  scripts:
+    - name: "verify-values-file-install"
+      description: "Confirms the values-file install set replicas, disabled cleanup, and extended excludeGroups without dropping the defaults"
+      type: "file"
+      source: "validation/validate-completed.sh"
