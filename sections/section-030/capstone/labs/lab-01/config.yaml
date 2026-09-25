@@ -1,0 +1,19 @@
+metadata:
+  name: "ats-008-lab-006"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-kyverno"
+      description: "Installs Kyverno onto the kind cluster via Helm at baseline values"
+      type: "file"
+      source: "bootstrap/01-install-kyverno.sh"
+
+validation:
+  scripts:
+    - name: "verify-capstone-030"
+      description: "Confirms the admission and cleanup controllers run with their configured extraArgs"
+      type: "file"
+      source: "validation/validate-completed.sh"

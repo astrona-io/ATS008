@@ -1,0 +1,19 @@
+metadata:
+  name: "ats-008-lab-009"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "add-helm-repo"
+      description: "Adds and updates the Kyverno Helm repo"
+      type: "file"
+      source: "bootstrap/01-add-helm-repo.sh"
+
+validation:
+  scripts:
+    - name: "verify-ha-install"
+      description: "Confirms all four controllers are installed with the documented HA replica counts and that leader election is active"
+      type: "file"
+      source: "validation/validate-completed.sh"

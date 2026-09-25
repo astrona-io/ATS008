@@ -1,0 +1,19 @@
+metadata:
+  name: "ats-008-lab-011"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-kyverno"
+      description: "Installs Kyverno onto the kind cluster via Helm at a baseline configuration"
+      type: "file"
+      source: "bootstrap/01-install-kyverno.sh"
+
+validation:
+  scripts:
+    - name: "verify-helm-upgrade"
+      description: "Confirms the kyverno release upgraded to revision 2, admission replicas is 3, and the cluster is healthy"
+      type: "file"
+      source: "validation/validate-completed.sh"

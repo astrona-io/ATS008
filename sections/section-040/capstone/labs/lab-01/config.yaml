@@ -1,0 +1,23 @@
+metadata:
+  name: "ats-008-lab-008"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-kyverno"
+      description: "Installs Kyverno onto the kind cluster via Helm"
+      type: "file"
+      source: "bootstrap/01-install-kyverno.sh"
+    - name: "seed-generate-policy"
+      description: "Applies a generate-rule ClusterPolicy that is deliberately missing background-controller RBAC for NetworkPolicy"
+      type: "file"
+      source: "bootstrap/02-seed-generate-policy.sh"
+
+validation:
+  scripts:
+    - name: "verify-generate-networkpolicy-rbac"
+      description: "Confirms the aggregated ClusterRole exists and the NetworkPolicy now generates successfully"
+      type: "file"
+      source: "validation/validate-completed.sh"

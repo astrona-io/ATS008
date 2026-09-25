@@ -1,0 +1,23 @@
+metadata:
+  name: "ats-008-lab-003"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-kyverno"
+      description: "Installs Kyverno onto the kind cluster"
+      type: "file"
+      source: "bootstrap/01-install-kyverno.sh"
+    - name: "lab-003-setup"
+      description: "Creates the checkout namespace and the require-owner-label ClusterPolicy"
+      type: "file"
+      source: "bootstrap/02-seed-policy.sh"
+
+validation:
+  scripts:
+    - name: "verify-policy-exception"
+      description: "Confirms PolicyException support is enabled and the exception admits smoke-test while no-owner-pod is still blocked"
+      type: "file"
+      source: "validation/validate-completed.sh"

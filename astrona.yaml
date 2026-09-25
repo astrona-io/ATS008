@@ -1,0 +1,344 @@
+training:
+  id: ATS008
+  title: "KCA: Installation, Configuration, and Upgrades"
+  description: >
+    Training material covering the Installation, Configuration, and Upgrades
+    domain for the Kyverno Certified Associate (KCA) learning path, with
+    hands-on labs for each competency running on a kind Kubernetes cluster.
+
+  certification:
+    name: Kyverno Certified Associate
+    code: KCA
+    provider: Kyverno Project (CNCF Sandbox)
+    domain: Installation, Configuration, and Upgrades
+    weight: 18
+
+modules:
+  - id: module-010
+    title: "Section 010: Helm-based Installation and Configuration"
+    description: >
+      Install Kyverno the way most real clusters run it: adding the official
+      Helm repo, running a values-driven helm install/upgrade into a
+      dedicated namespace, and auditing exactly what got deployed.
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-010/README.md
+
+      - type: reading
+        title: "Module 1: Installing Kyverno with Helm"
+        path: sections/section-010/module-01/course.md
+
+      - type: reading
+        title: "Module 1.1: Adding the Repo & a Baseline Install"
+        path: sections/section-010/module-01/course-01-repo-add-and-baseline-install.md
+
+      - type: reading
+        title: "Module 1.2: Customizing the Install — values.yaml & --set"
+        path: sections/section-010/module-01/course-02-customizing-with-values.md
+
+      - type: reading
+        title: Question
+        path: sections/section-010/module-01/labs/lab-01/question.md
+
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-010/module-01/labs/lab-01/solution.md
+
+      - type: lab
+        title: "Helm Install with Custom Values Lab"
+        path: sections/section-010/module-01/labs/lab-01
+
+      - type: reading
+        title: "Section 010 Knowledge Check: Helm-based Installation and Configuration"
+        path: sections/section-010/quiz.md
+
+      - type: reading
+        title: Question
+        path: sections/section-010/capstone/labs/lab-01/question.md
+
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-010/capstone/labs/lab-01/solution.md
+
+      - type: lab
+        title: "Helm-based Installation and Configuration Capstone Lab"
+        path: sections/section-010/capstone/labs/lab-01
+
+  - id: module-020
+    title: "Section 020: Kyverno Custom Resource Definitions (CRDs)"
+    description: >
+      Go beyond ClusterPolicy and Policy to the full Kyverno CRD surface —
+      PolicyException, CleanupPolicy, GlobalContextEntry — and the reporting
+      hierarchy behind PolicyReport, from internal admission/background-scan
+      reports up to the aggregated, user-facing result.
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-020/README.md
+
+      - type: reading
+        title: "Module 1: Kyverno's CRD Surface"
+        path: sections/section-020/module-01/course.md
+
+      - type: reading
+        title: "Module 1.1: Policy-Authoring CRDs"
+        path: sections/section-020/module-01/course-01-policy-authoring-crds.md
+
+      - type: reading
+        title: "Module 1.2: State & Reporting CRDs"
+        path: sections/section-020/module-01/course-02-state-and-reporting-crds.md
+
+      - type: reading
+        title: Question
+        path: sections/section-020/module-01/labs/lab-01/question.md
+
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-020/module-01/labs/lab-01/solution.md
+
+      - type: lab
+        title: "PolicyException CRD Lab"
+        path: sections/section-020/module-01/labs/lab-01
+
+      - type: reading
+        title: "Section 020 Knowledge Check: Kyverno Custom Resource Definitions (CRDs)"
+        path: sections/section-020/quiz.md
+
+      - type: reading
+        title: Question
+        path: sections/section-020/capstone/labs/lab-01/question.md
+
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-020/capstone/labs/lab-01/solution.md
+
+      - type: lab
+        title: "Kyverno CRDs Capstone Lab"
+        path: sections/section-020/capstone/labs/lab-01
+
+  - id: module-030
+    title: "Section 030: Controller Configuration with Flags"
+    description: >
+      Tune each of Kyverno's four independent controllers — admission,
+      background, cleanup, reports — through their own command-line flags,
+      and understand the difference between a live emergency patch and a
+      durable Helm extraArgs change.
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-030/README.md
+
+      - type: reading
+        title: "Module 1: Tuning Kyverno Controllers with Flags"
+        path: sections/section-030/module-01/course.md
+
+      - type: reading
+        title: "Module 1.1: The Four Controllers & Their Flags"
+        path: sections/section-030/module-01/course-01-the-four-controllers-and-their-flags.md
+
+      - type: reading
+        title: "Module 1.2: Changing Flags — Live Edits vs Durable Config"
+        path: sections/section-030/module-01/course-02-changing-flags-live-vs-durable.md
+
+      - type: reading
+        title: Question
+        path: sections/section-030/module-01/labs/lab-01/question.md
+
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-030/module-01/labs/lab-01/solution.md
+
+      - type: lab
+        title: "Controller Flag Tuning Lab"
+        path: sections/section-030/module-01/labs/lab-01
+
+      - type: reading
+        title: "Section 030 Knowledge Check: Controller Configuration with Flags"
+        path: sections/section-030/quiz.md
+
+      - type: reading
+        title: Question
+        path: sections/section-030/capstone/labs/lab-01/question.md
+
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-030/capstone/labs/lab-01/solution.md
+
+      - type: lab
+        title: "Controller Configuration with Flags Capstone Lab"
+        path: sections/section-030/capstone/labs/lab-01
+
+  - id: module-040
+    title: "Section 040: Configuring Kyverno RBAC, Roles, and Permissions"
+    description: >
+      Understand Kyverno's per-controller ServiceAccounts, the aggregated
+      ClusterRole pattern that assembles their permissions, the built-in
+      view role binding, and how to safely extend Kyverno's permissions
+      without editing its shipped default roles.
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-040/README.md
+
+      - type: reading
+        title: "Module 1: Kyverno RBAC — Roles & Permissions"
+        path: sections/section-040/module-01/course.md
+
+      - type: reading
+        title: "Module 1.1: ServiceAccounts & Aggregated ClusterRoles"
+        path: sections/section-040/module-01/course-01-service-accounts-and-aggregated-clusterroles.md
+
+      - type: reading
+        title: "Module 1.2: The Built-in view Role & Verifying Permissions"
+        path: sections/section-040/module-01/course-02-the-view-role-and-verifying-permissions.md
+
+      - type: reading
+        title: Question
+        path: sections/section-040/module-01/labs/lab-01/question.md
+
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-040/module-01/labs/lab-01/solution.md
+
+      - type: lab
+        title: "ClusterRole Aggregation Lab"
+        path: sections/section-040/module-01/labs/lab-01
+
+      - type: reading
+        title: "Section 040 Knowledge Check: Configuring Kyverno RBAC, Roles, and Permissions"
+        path: sections/section-040/quiz.md
+
+      - type: reading
+        title: Question
+        path: sections/section-040/capstone/labs/lab-01/question.md
+
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-040/capstone/labs/lab-01/solution.md
+
+      - type: lab
+        title: "Kyverno RBAC Capstone Lab"
+        path: sections/section-040/capstone/labs/lab-01
+
+  - id: module-050
+    title: "Section 050: High Availability Installations"
+    description: >
+      Learn why "more replicas" means something different for each Kyverno
+      controller — the admission controller's stateless horizontal scaling
+      versus the background and reports controllers' leader-election
+      failover model — and install the documented HA topology.
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-050/README.md
+
+      - type: reading
+        title: "Module 1: High Availability Installations"
+        path: sections/section-050/module-01/course.md
+
+      - type: reading
+        title: "Module 1.1: Leader Election vs Horizontal Scale"
+        path: sections/section-050/module-01/course-01-leader-election-vs-horizontal-scale.md
+
+      - type: reading
+        title: "Module 1.2: The Documented HA Install & Sizing"
+        path: sections/section-050/module-01/course-02-the-documented-ha-install.md
+
+      - type: reading
+        title: Question
+        path: sections/section-050/module-01/labs/lab-01/question.md
+
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-050/module-01/labs/lab-01/solution.md
+
+      - type: lab
+        title: "HA Replica Topology Lab"
+        path: sections/section-050/module-01/labs/lab-01
+
+      - type: reading
+        title: "Section 050 Knowledge Check: High Availability Installations"
+        path: sections/section-050/quiz.md
+
+      - type: reading
+        title: Question
+        path: sections/section-050/capstone/labs/lab-01/question.md
+
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-050/capstone/labs/lab-01/solution.md
+
+      - type: lab
+        title: "High Availability Installations Capstone Lab"
+        path: sections/section-050/capstone/labs/lab-01
+
+  - id: module-060
+    title: "Section 060: Upgrading Kyverno"
+    description: >
+      Upgrade Kyverno safely with Helm, understand why its CRDs are a
+      deliberate exception to the usual "helm upgrade never touches CRDs"
+      rule, and build the release-notes and verification discipline a
+      production upgrade needs.
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-060/README.md
+
+      - type: reading
+        title: "Module 1: Upgrading Kyverno Safely"
+        path: sections/section-060/module-01/course.md
+
+      - type: reading
+        title: "Module 1.1: helm upgrade & the CRD Exception"
+        path: sections/section-060/module-01/course-01-helm-upgrade-and-crds.md
+
+      - type: reading
+        title: "Module 1.2: Release Notes, Version Skipping & Post-Upgrade Verification"
+        path: sections/section-060/module-01/course-02-release-notes-and-verification.md
+
+      - type: reading
+        title: Question
+        path: sections/section-060/module-01/labs/lab-01/question.md
+
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-060/module-01/labs/lab-01/solution.md
+
+      - type: lab
+        title: "Upgrading a Live Kyverno Release Lab"
+        path: sections/section-060/module-01/labs/lab-01
+
+      - type: reading
+        title: "Section 060 Knowledge Check: Upgrading Kyverno"
+        path: sections/section-060/quiz.md
+
+      - type: reading
+        title: Question
+        path: sections/section-060/capstone/labs/lab-01/question.md
+
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-060/capstone/labs/lab-01/solution.md
+
+      - type: lab
+        title: "Upgrading Kyverno Capstone Lab"
+        path: sections/section-060/capstone/labs/lab-01
+
+  - id: module-070
+    title: "KCA Installation, Configuration, and Upgrades Certification Quiz"
+    description: >
+      A comprehensive, scenario-based final assessment covering all 6
+      modules across the 6 Installation, Configuration, and Upgrades
+      sections, simulating exam-style pressure.
+
+    content:
+      - type: reading
+        title: "Final Domain Certification Quiz"
+        path: sections/final-domain-quiz.md
