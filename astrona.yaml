@@ -32,11 +32,11 @@ modules:
 
       - type: reading
         title: "Module 1.1: Adding the Repo & a Baseline Install"
-        path: sections/section-010/module-01/course-01-repo-add-and-baseline-install.md
+        path: sections/section-010/module-01/course-01-adding-the-repo-and-a-baseline-install.md
 
       - type: reading
-        title: "Module 1.2: Customizing the Install — values.yaml & --set"
-        path: sections/section-010/module-01/course-02-customizing-with-values.md
+        title: "Module 1.2: Customizing the Install: values.yaml & --set"
+        path: sections/section-010/module-01/course-02-customizing-with-values-and-set.md
 
       - type: reading
         title: Question
@@ -90,8 +90,8 @@ modules:
         path: sections/section-020/module-01/course-01-policy-authoring-crds.md
 
       - type: reading
-        title: "Module 1.2: State & Reporting CRDs"
-        path: sections/section-020/module-01/course-02-state-and-reporting-crds.md
+        title: "Module 1.2: Reporting & State CRDs"
+        path: sections/section-020/module-01/course-02-reporting-and-state-crds.md
 
       - type: reading
         title: Question
@@ -145,8 +145,8 @@ modules:
         path: sections/section-030/module-01/course-01-the-four-controllers-and-their-flags.md
 
       - type: reading
-        title: "Module 1.2: Changing Flags — Live Edits vs Durable Config"
-        path: sections/section-030/module-01/course-02-changing-flags-live-vs-durable.md
+        title: "Module 1.2: Setting Flags via Helm"
+        path: sections/section-030/module-01/course-02-setting-flags-via-helm.md
 
       - type: reading
         title: Question
@@ -196,12 +196,12 @@ modules:
         path: sections/section-040/module-01/course.md
 
       - type: reading
-        title: "Module 1.1: ServiceAccounts & Aggregated ClusterRoles"
-        path: sections/section-040/module-01/course-01-service-accounts-and-aggregated-clusterroles.md
+        title: "Module 1.1: ServiceAccounts, Aggregated ClusterRoles & Built-in View Access"
+        path: sections/section-040/module-01/course-01-serviceaccounts-and-aggregated-clusterroles.md
 
       - type: reading
-        title: "Module 1.2: The Built-in view Role & Verifying Permissions"
-        path: sections/section-040/module-01/course-02-the-view-role-and-verifying-permissions.md
+        title: "Module 1.2: Granting Extra Permissions Safely"
+        path: sections/section-040/module-01/course-02-granting-extra-permissions-safely.md
 
       - type: reading
         title: Question
@@ -251,12 +251,12 @@ modules:
         path: sections/section-050/module-01/course.md
 
       - type: reading
-        title: "Module 1.1: Leader Election vs Horizontal Scale"
-        path: sections/section-050/module-01/course-01-leader-election-vs-horizontal-scale.md
+        title: "Module 1.1: Why Replicas Behave Differently Per Controller"
+        path: sections/section-050/module-01/course-01-why-replicas-behave-differently.md
 
       - type: reading
-        title: "Module 1.2: The Documented HA Install & Sizing"
-        path: sections/section-050/module-01/course-02-the-documented-ha-install.md
+        title: "Module 1.2: Installing for HA with Helm"
+        path: sections/section-050/module-01/course-02-installing-for-ha-with-helm.md
 
       - type: reading
         title: Question
@@ -306,12 +306,12 @@ modules:
         path: sections/section-060/module-01/course.md
 
       - type: reading
-        title: "Module 1.1: helm upgrade & the CRD Exception"
-        path: sections/section-060/module-01/course-01-helm-upgrade-and-crds.md
+        title: "Module 1.1: The Helm Upgrade Path"
+        path: sections/section-060/module-01/course-01-the-helm-upgrade-path.md
 
       - type: reading
-        title: "Module 1.2: Release Notes, Version Skipping & Post-Upgrade Verification"
-        path: sections/section-060/module-01/course-02-release-notes-and-verification.md
+        title: "Module 1.2: Manifest Upgrades & Post-Upgrade Validation"
+        path: sections/section-060/module-01/course-02-manifest-upgrades-and-post-upgrade-validation.md
 
       - type: reading
         title: Question
