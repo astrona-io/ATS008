@@ -49,6 +49,7 @@ modules:
       - type: lab
         title: "Helm Install with Custom Values Lab"
         path: sections/section-010/module-01/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: "Section 010 Knowledge Check: Helm-based Installation and Configuration"
@@ -65,6 +66,7 @@ modules:
       - type: lab
         title: "Helm-based Installation and Configuration Capstone Lab"
         path: sections/section-010/capstone/labs/lab-01
+        difficulty: advanced
 
   - id: module-020
     title: "Section 020: Kyverno Custom Resource Definitions (CRDs)"
@@ -102,6 +104,7 @@ modules:
       - type: lab
         title: "PolicyException CRD Lab"
         path: sections/section-020/module-01/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: "Section 020 Knowledge Check: Kyverno Custom Resource Definitions (CRDs)"
@@ -118,6 +121,7 @@ modules:
       - type: lab
         title: "Kyverno CRDs Capstone Lab"
         path: sections/section-020/capstone/labs/lab-01
+        difficulty: advanced
 
   - id: module-030
     title: "Section 030: Controller Configuration with Flags"
@@ -155,6 +159,7 @@ modules:
       - type: lab
         title: "Controller Flag Tuning Lab"
         path: sections/section-030/module-01/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: "Section 030 Knowledge Check: Controller Configuration with Flags"
@@ -171,6 +176,7 @@ modules:
       - type: lab
         title: "Controller Configuration with Flags Capstone Lab"
         path: sections/section-030/capstone/labs/lab-01
+        difficulty: advanced
 
   - id: module-040
     title: "Section 040: Configuring Kyverno RBAC, Roles, and Permissions"
@@ -208,6 +214,7 @@ modules:
       - type: lab
         title: "ClusterRole Aggregation Lab"
         path: sections/section-040/module-01/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: "Section 040 Knowledge Check: Configuring Kyverno RBAC, Roles, and Permissions"
@@ -224,6 +231,7 @@ modules:
       - type: lab
         title: "Kyverno RBAC Capstone Lab"
         path: sections/section-040/capstone/labs/lab-01
+        difficulty: advanced
 
   - id: module-050
     title: "Section 050: High Availability Installations"
@@ -261,6 +269,7 @@ modules:
       - type: lab
         title: "HA Replica Topology Lab"
         path: sections/section-050/module-01/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: "Section 050 Knowledge Check: High Availability Installations"
@@ -277,6 +286,7 @@ modules:
       - type: lab
         title: "High Availability Installations Capstone Lab"
         path: sections/section-050/capstone/labs/lab-01
+        difficulty: advanced
 
   - id: module-060
     title: "Section 060: Upgrading Kyverno"
@@ -314,6 +324,7 @@ modules:
       - type: lab
         title: "Upgrading a Live Kyverno Release Lab"
         path: sections/section-060/module-01/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: "Section 060 Knowledge Check: Upgrading Kyverno"
@@ -330,6 +341,7 @@ modules:
       - type: lab
         title: "Upgrading Kyverno Capstone Lab"
         path: sections/section-060/capstone/labs/lab-01
+        difficulty: advanced
 
   - id: module-070
     title: "KCA Installation, Configuration, and Upgrades Certification Quiz"
