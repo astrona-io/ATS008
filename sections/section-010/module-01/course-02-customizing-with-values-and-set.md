@@ -1,21 +1,23 @@
-# Part 2 — Customizing the Install: values.yaml & --set
+# Customizing the Install: values.yaml & --set
 
-> Prerequisite: [Part 1 — Adding the Repo & a Baseline Install](./course-01-adding-the-repo-and-a-baseline-install.md). Next: [Section 020 — Kyverno's CRD Surface](../../section-020/module-01/course.md).
+Astronaut, a baseline `helm install` gives you a working Kyverno. The chart's `values.yaml` is where you really shape it: how many replicas each controller runs, how much CPU and memory they ask for, whether Helm manages the custom resource definitions, and many other settings.
 
-A baseline `helm install` gets you a working Kyverno, but the chart's `values.yaml` is where you actually shape the deployment — how many replicas each controller runs, how much CPU/memory they request, whether Helm manages the CRDs at all, and dozens of other settings. You reach these values two ways: a handful of `--set key=value` flags on the command line, or a `-f values.yaml` file for anything more than a couple of overrides.
+Think of `values.yaml` as the order form for the station kit. You can change it in two ways. A `--set key=value` flag is a single change written on the form. A `-f values.yaml` file is a whole filled-in form of your own.
 
-## CRD management: `crds.install`
+## Who installs the custom resource definitions: `crds.install`
+
+One value decides whether Helm installs Kyverno's custom resource definitions at all:
 
 ```yaml
 crds:
   install: true   # default
 ```
 
-Kyverno's CRDs are installed as a dedicated chart dependency, gated by this single boolean. Leave it `true` (the default) and Helm installs and — critically, as you'll see in Section 060 — keeps the CRDs up to date on every `helm upgrade`. Set it `false` only if something else in your pipeline manages Kyverno's CRDs independently.
+Kyverno ships its custom resource definitions as a separate chart inside the main chart (a chart dependency), switched on by this one setting. Leave it `true`, the default, and Helm installs them and keeps them up to date on every `helm upgrade`. Set it to `false` only if another tool in your pipeline already manages Kyverno's custom resource definitions.
 
 ## Sizing the admission controller
 
-Two values.yaml paths matter most day-to-day:
+The admission controller is the team of inspectors at the launch gate. Two settings for it matter most from day to day:
 
 ```yaml
 admissionController:
@@ -30,9 +32,9 @@ admissionController:
         memory: 384Mi
 ```
 
-Note the nesting: `replicas` sits directly under `admissionController`, but `resources` sits one level deeper, under `admissionController.container`. This inconsistency is not unique to `admissionController` — you'll meet it again, more sharply, when setting controller command-line flags in Section 030.
+Look closely at the nesting. `replicas` sits directly under `admissionController`. `resources` sits one level deeper, under `admissionController.container`. You will meet this same extra `container` level again when you set controller flags, so learn to look for it now.
 
-The other three controllers each have their own `enabled` toggle:
+The other three controllers each have their own on and off switch:
 
 ```yaml
 backgroundController:
@@ -45,9 +47,15 @@ cleanupController:
   enabled: true   # default
 ```
 
-## `-f values.yaml` vs many `--set` flags
+Setting one of them to `false` removes that controller's Deployment from the install completely.
 
-For one or two overrides, `--set` is fine:
+## `--set` flags or a values file
+
+You now know which keys to change. Here are the two ways to hand them to Helm.
+
+### A few changes: `--set`
+
+For one or two changes, `--set` on the command line is fine:
 
 ```sh
 helm install kyverno kyverno/kyverno -n kyverno --create-namespace \
@@ -56,10 +64,15 @@ helm install kyverno kyverno/kyverno -n kyverno --create-namespace \
   --set admissionController.container.resources.requests.memory=128Mi
 ```
 
-For anything larger, a values file is easier to read, review, and version-control:
+Each `--set` uses dots to walk down the same nesting you saw in the YAML above.
+
+### More changes: a values file
+
+For anything bigger, a values file is easier to read, review and keep in version control.
+
+Save this as `values.yaml`:
 
 ```yaml
-# values.yaml
 admissionController:
   replicas: 2
   container:
@@ -69,57 +82,48 @@ admissionController:
         memory: 128Mi
 ```
 
+Install with it:
+
 ```sh
 helm install kyverno kyverno/kyverno -n kyverno --create-namespace -f values.yaml
 ```
 
-## The idempotent pattern: `helm upgrade --install`
-
-Once a release might already exist, prefer `helm upgrade --install` over `helm install` — it installs the release if it's missing and upgrades it in place if it's already there, which makes the exact same command safe to re-run in a CI pipeline:
+Then check the result on the live Deployment, not just in Helm:
 
 ```sh
-helm upgrade --install kyverno kyverno/kyverno -n kyverno --create-namespace -f values.yaml
+kubectl get deploy kyverno-admission-controller -n kyverno -o yaml
 ```
 
-## Auditing what actually landed
-
-Your values file describes *intent*. To see the *effective* configuration Helm actually merged (your overrides layered on top of the chart's defaults), use:
-
-```sh
-helm get values kyverno -n kyverno -a
-```
-
-The `-a` (`--all`) flag is the important part — without it, `helm get values` only shows the values *you* explicitly set, hiding everything still at its chart default. Before installing at all, `helm show values kyverno/kyverno` prints the chart's full default `values.yaml` so you know what you're overriding.
+Look for `replicas: 2` under `spec`, and for `cpu: 100m` and `memory: 128Mi` under the container's `resources.requests`. That is the Kubernetes Deployment itself telling you what it runs.
 
 > [!TIP]
-> **Try it — see your override next to every default**
->
-> ```sh
-> helm get values kyverno -n kyverno -a | grep -A3 admissionController
-> ```
->
-> Expect to see your `replicas: 2` sitting right next to every other `admissionController.*` default the chart ships with — this is the fastest way to confirm a `--set` flag actually took effect versus silently being ignored due to a typo in the key path.
+> Before you write your own values, run `helm show values kyverno/kyverno`. It prints the chart's full default `values.yaml`, so you can copy the exact key path instead of guessing it.
+
+## Common pitfalls
 
 > [!WARNING]
-> **Common pitfall — Helm replaces lists, it does not merge them**
->
-> Kyverno's default `config.excludeGroups` is `["system:serviceaccounts:kube-system", "system:nodes"]`. If you override it like this:
->
-> ```sh
-> --set config.excludeGroups[0]="system:serviceaccounts:ci"
-> ```
->
-> you have not *added* a third excluded group — you have **replaced the entire list** with a single entry, silently dropping the two built-in defaults. Kyverno's own components and system Pods could now become subject to policies they were previously exempt from. Any time you override a list-valued setting, re-list every entry you want to keep, not just the new one:
->
-> ```yaml
-> config:
->   excludeGroups:
->     - "system:serviceaccounts:kube-system"
->     - "system:nodes"
->     - "system:serviceaccounts:ci"
-> ```
+> - **Putting `resources` directly under `admissionController`.** The key is `admissionController.container.resources`. A wrong path does not cause an error; Helm just ignores it.
+> - **Mixing up `requests` and `limits`.** A request is what the pod is promised; a limit is the most it may use. Graders and schedulers read them separately.
+> - **Trusting the command instead of the cluster.** Read the values back from the live Deployment to prove they landed.
 
-## Reference
+## Your mission: Helm Install with Custom Values
 
-- `helm show values kyverno/kyverno` — the chart's complete default `values.yaml`, useful to read before writing your own overrides.
-- Kyverno's Helm chart `values.yaml` on GitHub — the authoritative source for every configurable key and its default.
+You can now install Kyverno into its own namespace and size the admission controller with `--set` or a values file. The mission asks you to do exactly that on a fresh cluster: install release `kyverno`, set two replicas and the resource requests, and confirm the release.
+
+Start the mission:
+
+```sh
+astrona run --git ssh://git@github.com/astrona-io/ATS008.git -c sections/section-010/module-01/labs/lab-01
+```
+
+Read the task in [`question.md`](./labs/lab-01/question.md) and solve it on your own first. When you think you are done, send it for grading:
+
+```sh
+astrona submit -c sections/section-010/module-01/labs/lab-01
+```
+
+When the mission is done, remove it:
+
+```sh
+astrona destroy ats-008-lab-001
+```

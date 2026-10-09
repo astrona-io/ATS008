@@ -1,37 +1,43 @@
-# Part 1 — Adding the Repo & a Baseline Install
+# Adding the Repo & a Baseline Install
 
-> Prerequisite: [Landing page](./course.md). Next: [Part 2 — Customizing the Install: values.yaml & --set](./course-02-customizing-with-values-and-set.md).
+Astronaut, before you can inspect a single launch request, the inspection authority has to be built. In Kubernetes terms: Kyverno has to be installed. This part takes you from an empty cluster to a running Kyverno with four commands, and shows you how to check that it really worked.
 
-## Adding the repo
+## Adding the Helm repository
 
-Helm charts live in repositories, and Kyverno publishes its own. Before you can install anything, add it and refresh Helm's local index:
+A Helm chart is a station kit: every part, plus the plan for putting them together. Charts live in a Helm repository, the kit depot you order kits from. Kyverno publishes its own depot, so you add it first and then refresh Helm's local list of kits:
 
 ```sh
 helm repo add kyverno https://kyverno.github.io/kyverno/
 helm repo update
 ```
 
-`helm repo add` just registers the URL under the local name `kyverno` — it downloads nothing yet. `helm repo update` pulls the current chart index so `helm install kyverno/kyverno` resolves to the latest chart version Helm knows about.
+`helm repo add` only saves the address under the local name `kyverno`. It downloads nothing yet. `helm repo update` fetches the current list of chart versions, so that `kyverno/kyverno` points at the newest chart Helm knows about.
+
+If you want to read about the chart before you install it, `helm show chart kyverno/kyverno` prints its name, version and maintainers without installing anything.
 
 ## The dedicated-namespace rule
 
-Kyverno's own documentation is explicit on this point: Kyverno **must always be installed in a dedicated Namespace** and **must not be co-located with other applications**. This is not just tidiness — Kyverno's admission webhook intercepts writes across the cluster, and keeping its own controllers, ServiceAccounts, and RBAC isolated in one namespace makes it far easier to reason about (and lock down) exactly what has access to that machinery.
+Kyverno's own documentation is strict about where it lives. Kyverno **must be installed in a dedicated namespace**, and it **must not share that namespace with other applications**. Think of the namespace as Kyverno's own planet, where nothing else is parked.
+
+This is not just tidiness. Kyverno's admission webhook is the call line that the Kubernetes API server (mission control's registry desk) uses to ask Kyverno about writes all over the cluster. Keeping Kyverno's controllers, service accounts and permissions alone on one planet makes it much easier to see, and lock down, who can touch that machinery.
 
 By convention, that namespace is called `kyverno`.
 
 ## A baseline install
 
+Here is the smallest correct install:
+
 ```sh
 helm install kyverno kyverno/kyverno -n kyverno --create-namespace
 ```
 
-Reading this command:
+Read it piece by piece:
 
-- `kyverno` (first positional argument) is the **release name** — Helm's label for "this particular installation," used by every later `helm upgrade`/`helm status`/`helm uninstall` call.
-- `kyverno/kyverno` is `<repo-name>/<chart-name>` — the chart you added above.
-- `-n kyverno --create-namespace` creates and targets the dedicated namespace from the rule above.
+- `kyverno`, the first word after `install`, is the **release name**. A release is one assembled station with its own name and flight record. Every later `helm upgrade`, `helm status` or `helm uninstall` uses this name.
+- `kyverno/kyverno` is `<repository name>/<chart name>`: the chart you just added.
+- `-n kyverno --create-namespace` creates the dedicated namespace and installs into it.
 
-This is a fine baseline for a scratch or learning cluster. For a production, highly-available install, Kyverno's docs give a more deliberate example (covered in full in Section 050):
+This is fine for a learning cluster. For a production cluster that must stay up, Kyverno's documentation gives a larger example with more copies (replicas) of each controller:
 
 ```sh
 helm install kyverno kyverno/kyverno -n kyverno --create-namespace \
@@ -41,9 +47,15 @@ helm install kyverno kyverno/kyverno -n kyverno --create-namespace \
   --set reportsController.replicas=2
 ```
 
-## Verifying the install
+The admission controller gets three replicas because every copy can answer requests. The other three controllers get two, so a standby is ready if one copy stops.
 
-Three commands tell you almost everything you need to know right after installing:
+## Checking the install
+
+A finished install is not the same as a working one. Three commands tell you almost everything right after installing.
+
+### Try it on your cluster
+
+Run these three checks:
 
 ```sh
 kubectl get pods -n kyverno
@@ -51,25 +63,28 @@ kubectl get crd | grep kyverno.io
 helm list -n kyverno
 ```
 
-- `kubectl get pods -n kyverno` should show one pod per controller (admission, background, cleanup, reports) in `Running` state.
-- `kubectl get crd | grep kyverno.io` confirms Kyverno's Custom Resource Definitions actually landed (more on the full CRD surface in Section 020).
-- `helm list -n kyverno` shows the release itself, with a `STATUS` column that should read `deployed`.
+Here is what each one should show:
+
+- `kubectl get pods -n kyverno` lists one pod per controller (admission, background, cleanup and reports), each `Running`.
+- `kubectl get crd | grep kyverno.io` lists Kyverno's custom resource definitions. A custom resource definition (CRD) teaches mission control's registry a new kind of form, such as `ClusterPolicy`. If none are listed, Kyverno has nothing to read its policies from.
+- `helm list -n kyverno` shows the release itself. Its `STATUS` column should say `deployed`.
+
+For more detail on one release, ask Helm directly:
+
+```sh
+helm status kyverno -n kyverno
+```
+
+This prints the same `STATUS: deployed` that `helm list` sums up, plus the `REVISION` number and any notes the chart prints after an install. Each install or upgrade adds one revision to the release's flight record, so a fresh install shows revision `1`.
 
 > [!TIP]
-> **Try it — confirm the release status in detail**
->
-> ```sh
-> helm status kyverno -n kyverno
-> ```
->
-> This prints the same `STATUS: deployed` line `helm list` summarizes, plus the exact `REVISION` number (you'll use this in Section 060 when upgrading) and any post-install notes the chart defines.
+> After any install, check all three layers: the pods, the custom resource definitions and the Helm release. A release can say `deployed` while a pod is still failing to start.
 
-## Reference
+Helm is the recommended way to install Kyverno. A plain manifest (`install.yaml`) also exists, but it creates no Helm release, so it cannot be upgraded in place later. That is why this course uses Helm.
 
-- `helm show chart kyverno/kyverno` — metadata about the chart itself (maintainers, version) without installing anything.
-- Kyverno's installation documentation for the full list of supported install methods (Helm is the recommended one; a plain-manifest alternative exists but cannot be upgraded in place — see Section 060).
+## Common pitfalls
 
 > [!WARNING]
-> **Common pitfall**
->
-> Installing Kyverno with `-n kube-system` or into any namespace already hosting other workloads. This violates the dedicated-namespace rule directly: Kyverno's RBAC, its webhook TLS secrets, and its own admission-exempt status all assume it is the only tenant of that namespace. Sharing it with unrelated applications makes future RBAC scoping (Section 040) and namespace-level cleanup far riskier than it needs to be.
+> - **Installing Kyverno into `kube-system` or a namespace that already runs other workloads.** This breaks the dedicated-namespace rule. Kyverno's permissions, its webhook certificates and its own exemption from checks all assume it is alone on its planet. Sharing it makes later permission changes and namespace cleanup much riskier.
+> - **Forgetting `--create-namespace`.** Without it, the install fails if the `kyverno` namespace does not exist yet.
+> - **Stopping at `helm list`.** `deployed` means Helm finished. It does not mean every pod is running or every custom resource definition is present. Check all three.

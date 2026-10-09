@@ -1,33 +1,53 @@
 # Kyverno Installation & Configuration with Helm
 
-Every Kyverno cluster starts the same way: something runs `helm install`. That one command creates four controller Deployments, a webhook configuration, a ConfigMap full of runtime settings, and a whole family of CRDs — and every one of those pieces can be sized, toggled, or overridden right from the values you pass in. Get comfortable with that surface now, because everything later in this domain (CRDs, controller flags, RBAC, HA, upgrades) is really just "more things you can hand to Helm."
+Astronaut, every Kyverno cluster starts the same way: someone runs `helm install`. Helm is the shipyard crane that assembles a whole station from a kit. That one command creates four controller Deployments, a webhook configuration, a ConfigMap full of runtime settings and a whole family of custom resource definitions.
+
+Every one of those pieces can be sized, switched on or off, or changed from the values you pass in. This module teaches you that surface. Almost everything else you do to run Kyverno is "one more value you hand to Helm".
 
 ```mermaid
 flowchart LR
-    A["helm repo add kyverno"] --> B["helm install\n(dedicated namespace)"]
-    B --> C["CRDs installed\n(crds.install)"]
-    B --> D["4 controllers deployed\n(admission/background/\nreports/cleanup)"]
-    C --> E["Verify:\nkubectl get pods/crd\nhelm list / get values"]
+    A["helm repo add kyverno"] --> B["helm install"]
+    B -->|"crds.install"| C["Custom resource definitions"]
+    B -->|"four Deployments"| D["Kyverno controllers"]
+    C --> E["Verify the install"]
     D --> E
 ```
 
-## How this module is organised
-
-1. **[Part 1 — Adding the Repo & a Baseline Install](./course-01-adding-the-repo-and-a-baseline-install.md)** — the official Helm repo, the dedicated-namespace rule, and a correct baseline install.
-2. **[Part 2 — Customizing the Install: values.yaml & --set](./course-02-customizing-with-values-and-set.md)** — reaching into `values.yaml` for replicas, resources, CRD management, and auditing what actually landed.
+The diagram shows the order: add the Helm repository, install the chart into its own namespace, and then check both the custom resource definitions and the four controllers (admission, background, reports and cleanup) with `kubectl get` and `helm list`.
 
 ## Learning objectives
 
 After this module you can:
 
-- Add the `kyverno` Helm repo and run a correct baseline install into a dedicated namespace.
+- Add the `kyverno` Helm repository and run a correct baseline install into a dedicated namespace.
 - Explain why Kyverno must never share a namespace with other applications.
-- Explain what `crds.install` controls and confirm whether Helm installed Kyverno's CRDs.
-- Set `admissionController.replicas` and `admissionController.container.resources` via `--set` or a values file.
-- Use `helm upgrade --install`, `helm list`, `helm status`, and `helm get values -a` to install idempotently and audit the effective configuration.
+- Explain what `crds.install` controls and check whether Helm installed Kyverno's custom resource definitions.
+- Set `admissionController.replicas` and `admissionController.container.resources` with `--set` or a values file.
+- Use `helm upgrade --install`, `helm list`, `helm status` and `helm get values -a` to install safely more than once and to check the real configuration.
+- Extend a list value, such as `config.excludeGroups`, without losing the entries you want to keep.
 
 ## Before you start
 
-You should be comfortable with basic `kubectl` usage. No prior Helm experience is assumed — this module teaches it from the Kyverno chart outward.
+Every mission starts with a pre-flight check, astronaut. Here is what this module expects you to know, and where you will practise.
 
-The linked lab gives you a kind Kubernetes cluster with `kubectl` and `helm` already configured, and the `kyverno` Helm repo not yet added. Kyverno is **not** pre-installed — installing it correctly is the graded task.
+### What you should already know
+
+- **Basic `kubectl`.** Getting pods, Deployments and namespaces, and reading output in YAML.
+- **No Helm yet.** This module teaches Helm from the Kyverno chart outward.
+
+### Where you practise
+
+This module has no playground. You practise in the graded mission at the end of the second part. The mission gives you a `kind` cluster (a training solar system in the simulator) with `kubectl` and `helm` ready to use. The `kyverno` Helm repository is already added there, and Kyverno is **not** installed: installing it correctly is the task.
+
+The commands in the parts work on any test cluster where you are allowed to install Kyverno.
+
+## How this module is organised
+
+1. **[Adding the Repo & a Baseline Install](./course-01-adding-the-repo-and-a-baseline-install.md):** the official Helm repository, the dedicated-namespace rule, a correct baseline install, and how to check it.
+2. **[Customizing the Install: values.yaml & --set](./course-02-customizing-with-values-and-set.md):** custom resource definition management, replicas, resources and controller switches, set with `--set` or a values file. Your first mission follows this part.
+3. **[Re-running and Auditing the Install](./course-03-re-running-and-auditing-the-install.md):** `helm upgrade --install`, reading back the real values, and the list-replacement trap.
+4. **[Wrap-Up](./course-04-wrap-up.md):** what you learned, your missions, and cleaning up.
+
+## Why this matters
+
+Writing a policy is easy once Kyverno runs correctly. Getting it to run correctly is the part most guides skip. If you know which values shape the install and how to read back what really landed, every later change to Kyverno is a small, checkable step.
