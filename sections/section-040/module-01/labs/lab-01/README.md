@@ -1,9 +1,17 @@
-# Kyverno's RBAC Model Sandbox
+---
+estimated_duration: 20m
+---
 
-Welcome to the Module 1 targeted practice sandbox. In this lab, you will diagnose a `generate` rule that fails for lack of RBAC on the background controller's ServiceAccount, then fix it with a correctly-labeled, aggregated `ClusterRole` — without ever touching one of Kyverno's own default roles.
+# ClusterRole Aggregation Lab
 
-## Launching the Lab
-Run the following command in your terminal to boot the kind Kubernetes cluster:
-```bash
-astrona run --git git@github.com:astrona-io/ATS008.git -c sections/section-040/module-01/labs/lab-01
+Graded lab for the RBAC module. The cluster starts with Kyverno installed by Helm and the `ClusterPolicy` `generate-default-quota`. The chart's default permission for the background controller to create `ResourceQuota` objects is removed, so new namespaces get no quota. You grant the permission with a new ClusterRole that carries the aggregation label. The task is in `question.md`; the walkthrough is in `solution.md`.
+
+## Run it
+
+```sh
+astrona run --git ssh://git@github.com/astrona-io/ATS008.git -c sections/section-040/module-01/labs/lab-01
+astrona submit --git ssh://git@github.com/astrona-io/ATS008.git -c sections/section-040/module-01/labs/lab-01
+astrona destroy ats-008-lab-007
 ```
+
+Authors run the local copy with `astrona run -c <lab>`.

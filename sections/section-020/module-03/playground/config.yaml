@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Reading Policy Reports and Intermediate Reports (PLAYGROUND). A clean sandbox
+# with no task and no grading. It installs the current kyverno/kyverno Helm
+# chart (no version pin), creates the namespaces hangar and depot, two Audit
+# ClusterPolicies and four Deployments, then stays running.
+#
+# Status: UNTESTED (written statically, not yet run against a cluster).
+metadata:
+  name: "ats-008-playground-020-03"
+  docs:
+    guide: docs/overview.md
+
+bootstrap:
+  init:
+    - name: "prepare"
+      description: "Installs Kyverno with Helm, creates the Audit policies and the Deployments in hangar"
+      type: "file"
+      source: "bootstrap/prepare.sh"

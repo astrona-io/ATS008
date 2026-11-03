@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Status: UNTESTED (written statically, not yet run against a cluster).
+#
+# Webhooks, Failure Policy and Certificates (PLAYGROUND). A clean sandbox: it
+# starts a kind cluster, adds the Kyverno Helm repository and installs Kyverno
+# with the chart default values, adds the namespace mission-ops and the policy audit-owner-label, then stays running for free exploration.
+# No task, no grading, no `astrona submit`.
+apiVersion: astrona.io/v1
+metadata:
+  name: ats-008-playground-030-03
+  docs:
+    guide: docs/overview.md
+
+runtime:
+  type: kind
+  kind:
+    image: kindest/node:v1.35.8
+
+# What the learner starts with: the `kyverno` Helm repository added and the
+# release `kyverno` in namespace `kyverno` installed at default values, with
+# all four controller Deployments ready.
+bootstrap:
+  init:
+    - name: prepare
+      description: "Add the Kyverno Helm repository and install Kyverno at default values"
+      type: file
+      source: bootstrap/prepare.sh
+
+teardown:
+  keepCluster: false

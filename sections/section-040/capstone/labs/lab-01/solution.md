@@ -68,3 +68,15 @@ kubectl get clusterrole kyverno-generate-networkpolicy -o yaml
 kubectl get networkpolicy default-deny -n billing-svc
 ```
 Once verified, run the local validation suite to pass the lab!
+
+---
+
+## Step 6: Submit
+
+Grading runs from the terminal where you typed `astrona run`:
+
+```bash
+astrona submit --git ssh://git@github.com/astrona-io/ATS008.git -c sections/section-040/capstone/labs/lab-01
+```
+
+You can also run it after Step 2 and Step 4 to see how far you are.

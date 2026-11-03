@@ -1,0 +1,329 @@
+# Knowledge check for section 060. Listed in astrona.yaml as a `type: quiz` entry after the capstone lab.
+---
+schema_version: 1
+kind: question_bank
+id: ats008-060
+course_id: ATS008
+exam_code: KCA
+status: draft
+provenance: Original practice material written for this course; not official exam
+  questions.
+scope:
+  type: section
+  id: section-060
+  title: Upgrading Kyverno
+questions:
+- id: ats008-060-q01
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Explain why a manifest install cannot be upgraded in place
+  source_readings:
+  - sections/section-060/module-01/course-02-manifest-upgrades-and-post-upgrade-validation.md
+  prompt: Your team built Kyverno with `kubectl create -f` and the release `install.yaml`.
+    A new version is out. What is the documented way to move to it?
+  options:
+  - id: a
+    text: Run `helm upgrade kyverno kyverno/kyverno -n kyverno`.
+    explanation: There is no Helm release for a manifest install, so Helm has nothing
+      to upgrade.
+  - id: b
+    text: Run `kubectl apply -f` with the new `install.yaml` and trust that it reconciles
+      everything.
+    explanation: This can leave old objects behind when a version removed or renamed
+      them.
+  - id: c
+    text: Delete with the old `install.yaml`, then create with the new one, accepting
+      a gap without controllers.
+    explanation: Correct. The two commands are an uninstall and a fresh install, so
+      the controllers are gone between them.
+  - id: d
+    text: Run `helm rollback kyverno 1`.
+    explanation: A rollback needs a release and a revision, and a manifest install
+      has neither.
+  correct_option: c
+  explanation: A manifest install has no flight record, so the way forward is to remove
+    it with the original manifest and install the new one.
+- id: ats008-060-q02
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain why a normal helm upgrade updates Kyverno's CRDs
+  source_readings:
+  - sections/section-060/module-01/course-01-the-helm-upgrade-path.md
+  prompt: An engineer used another chart that keeps its CRDs in a `crds/` folder,
+    and learned to apply CRD files by hand before every upgrade. Before upgrading
+    Kyverno with Helm, what should she do about the Kyverno CRDs?
+  options:
+  - id: a
+    text: 'Nothing by hand: the Kyverno chart ships its CRDs as templates, and `crds.install`
+      is true by default, so `helm upgrade` updates them.'
+    explanation: Correct. The CRDs are part of the release.
+  - id: b
+    text: Apply the new CRD files with `kubectl apply` first, because Helm never touches
+      CRDs.
+    explanation: That rule applies to the `crds/` folder, which the Kyverno chart
+      does not use.
+  - id: c
+    text: Delete every CRD first so Helm can recreate them.
+    explanation: Deleting a CRD deletes every object built on it, including policies.
+  - id: d
+    text: Run `kyverno migrate` before every upgrade and nothing else.
+    explanation: The migration command is for stored objects, not for installing CRDs,
+      and the chart already runs it in a post-upgrade hook.
+  correct_option: a
+  explanation: Kyverno's CRDs are ordinary chart templates, so a normal upgrade carries
+    their changes.
+- id: ats008-060-q03
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Choose --reuse-values to keep earlier settings on upgrade
+  source_readings:
+  - sections/section-060/module-01/course-01-the-helm-upgrade-path.md
+  prompt: Kyverno was installed with `--set admissionController.replicas=3`. A teammate
+    later runs `helm upgrade kyverno kyverno/kyverno -n kyverno --set backgroundController.replicas=2`
+    with no other flag. What happens to the admission controller replicas?
+  options:
+  - id: a
+    text: They stay at 3, because Helm always remembers the last values.
+    explanation: Helm only remembers them when you pass `--reuse-values`.
+  - id: b
+    text: They go back to the chart default, because the earlier value was not repeated.
+    explanation: Correct. Without `--reuse-values` Helm starts from the chart defaults
+      plus what you type now.
+  - id: c
+    text: The upgrade is refused until every value is repeated.
+    explanation: Helm does not check for that.
+  - id: d
+    text: They become 2, because the newest `--set` applies to every controller.
+    explanation: A `--set` applies only to the key it names.
+  correct_option: b
+  explanation: Without `--reuse-values` an upgrade resets values that are not typed
+    again.
+- id: ats008-060-q04
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Read release notes for every version you skip
+  source_readings:
+  - sections/section-060/module-01/course-01-the-helm-upgrade-path.md
+  prompt: A cluster runs Kyverno 1.9 and the target is the newest release, which is
+    several minor versions later and passes 1.10. Which notes should the team read?
+  options:
+  - id: a
+    text: Only the notes of the newest release.
+    explanation: Breaking changes can sit in a version you skip.
+  - id: b
+    text: The notes of the newest release and of every minor version in between.
+    explanation: Correct. Kyverno's own guide says 1.10 brought breaking changes that
+      limit upgrades to it and past it.
+  - id: c
+    text: Only the Helm help text.
+    explanation: The help text says how the command works, not what changed in Kyverno.
+  - id: d
+    text: None, because Helm upgrades are backward compatible by design.
+    explanation: Helm applies whatever the new chart contains, breaking changes included.
+  correct_option: b
+  explanation: Read the notes for every minor version between the current version
+    and the target.
+- id: ats008-060-q05
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Prove an upgrade worked with history, status and rollout checks
+  source_readings:
+  - sections/section-060/module-01/course-02-manifest-upgrades-and-post-upgrade-validation.md
+  prompt: "`helm upgrade` just printed a success message. Which set of checks best
+    shows that the upgrade really worked?"
+  options:
+  - id: a
+    text: "`helm search repo kyverno/kyverno --versions`, which shows the version
+      exists."
+    explanation: It shows what the repository offers, not what your cluster runs.
+  - id: b
+    text: "`kubectl get clusterpolicy`, because policies still listing proves health."
+    explanation: Policies are not part of the release and list even when controllers
+      are broken.
+  - id: c
+    text: Only the exit code of `helm upgrade`.
+    explanation: The upgrade can finish while new Pods still cannot start.
+  - id: d
+    text: "`helm history` and `helm status` for the new revision, plus `kubectl rollout
+      status` for each controller and `kubectl get pods -n kyverno`."
+    explanation: Correct. The flight record and the ships must both agree.
+  correct_option: d
+  explanation: Check the record with Helm and the ships with kubectl.
+- id: ats008-060-q06
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Spot an upgrade that Helm recorded as deployed while Pods are
+    broken
+  source_readings:
+  - sections/section-060/module-02/course-01-reading-the-history-and-rolling-back.md
+  prompt: "`helm history kyverno -n kyverno` shows revision 2 as `deployed`, yet a
+    new `kyverno-admission-controller` Pod shows `ImagePullBackOff`. What explains
+    this?"
+  options:
+  - id: a
+    text: The upgrade ran without `--wait`, so Helm recorded it once the objects were
+      sent and did not wait for the Pods.
+    explanation: Correct. Helm waits for Pods only when asked.
+  - id: b
+    text: Helm checked the image and found it valid.
+    explanation: Helm does not pull images.
+  - id: c
+    text: A rollback already happened.
+    explanation: A rollback would add a new revision with a rollback description.
+  - id: d
+    text: The cluster ignores revision numbers.
+    explanation: The revision numbers are exact; the status only reflects what Helm
+      sent.
+  correct_option: a
+  explanation: Without `--wait` and `--timeout`, a stuck rollout is not part of the
+    recorded status.
+- id: ats008-060-q07
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Roll a release back and read the history afterwards
+  source_readings:
+  - sections/section-060/module-02/course-01-reading-the-history-and-rolling-back.md
+  prompt: A release has revisions 1, 2 and 3. Revision 3 is broken. A technician runs
+    `helm rollback kyverno 1 -n kyverno --wait`. What does `helm history` show afterwards?
+  options:
+  - id: a
+    text: Only revision 1, because the later ones were deleted.
+    explanation: A rollback never deletes history.
+  - id: b
+    text: Revisions 1, 2 and 3 unchanged, with revision 1 marked deployed again.
+    explanation: Helm does not reuse the old number.
+  - id: c
+    text: Revisions 1 to 3 and a new revision 4 that holds revision 1's contents,
+      marked deployed, with revision 3 superseded.
+    explanation: Correct. A rollback is recorded as a new revision.
+  - id: d
+    text: The same list, but revision 3 is deleted from the cluster only.
+    explanation: Nothing is removed from the record.
+  correct_option: c
+  explanation: A rollback adds a new revision at the end of the record.
+- id: ats008-060-q08
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Say what a rollback does to running policies and CRDs
+  source_readings:
+  - sections/section-060/module-02/course-02-what-a-rollback-keeps-and-backing-up-policies.md
+  prompt: A rollback goes from a newer chart back to an older one. What happens to
+    the `ClusterPolicy` objects on the cluster?
+  options:
+  - id: a
+    text: They are deleted and recreated from the older revision.
+    explanation: They are not in the release.
+  - id: b
+    text: They are left alone, because they are not part of the release, while the
+      older CRD definitions are put back.
+    explanation: Correct. The release owns the CRDs but not the objects built on them.
+  - id: c
+    text: They are converted to the old policy format by a hook.
+    explanation: The chart's migration Job is a post-upgrade hook and does not run
+      on a rollback.
+  - id: d
+    text: They keep working but are hidden from `kubectl get`.
+    explanation: Nothing hides them.
+  correct_option: b
+  explanation: Helm rolls back what it owns. Policies are created by people, not by
+    the release.
+- id: ats008-060-q09
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Restore a policy from a backup dump
+  source_readings:
+  - sections/section-060/module-02/course-02-what-a-rollback-keeps-and-backing-up-policies.md
+  prompt: After a mistake, an administrator deletes a policy and runs `kubectl create
+    -f policy-backup.yaml`, which was made with `kubectl get clusterpolicies.kyverno.io
+    -o yaml`. The API server refuses the file and mentions `resourceVersion`. What
+    should she do?
+  options:
+  - id: a
+    text: Add `--force` to `kubectl create`.
+    explanation: The refusal is about fields in the file, not about force.
+  - id: b
+    text: Run `helm rollback` to restore policies.
+    explanation: A rollback does not restore policies.
+  - id: c
+    text: Remove `resourceVersion`, `uid`, `creationTimestamp`, `generation`, `managedFields`
+      and `status` from the file, then create it again.
+    explanation: Correct. A new object cannot carry those server-set fields.
+  - id: d
+    text: Restart the admission controller so it accepts the file.
+    explanation: A restart does not change the file's contents.
+  correct_option: c
+  explanation: A dump is for reading and comparing. Remove server-set fields before
+    creating objects from it.
+- id: ats008-060-q10
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Choose between reuse, reset and reset-then-reuse
+  source_readings:
+  - sections/section-060/module-02/course-03-values-version-skew-and-the-pre-upgrade-checklist.md
+  prompt: A team moves to a new chart version and wants the new chart's changed defaults
+    plus their own earlier settings. Which flag matches?
+  options:
+  - id: a
+    text: "`--reset-values`, because it keeps the last release's values."
+    explanation: It discards them.
+  - id: b
+    text: "`--reuse-values`, because it always applies the new defaults."
+    explanation: It can carry the old chart's defaults forward.
+  - id: c
+    text: "`--reset-then-reuse-values`, which resets to the new chart's defaults,
+      applies the last release's values and then the overrides."
+    explanation: Correct. This is the help text's own description.
+  - id: d
+    text: "`--history-max`, because it merges values."
+    explanation: It limits how many revisions Helm keeps.
+  correct_option: c
+  explanation: "`--reset-then-reuse-values` is the flag that does both steps."
+- id: ats008-060-q11
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Check chart Kubernetes version limits
+  source_readings:
+  - sections/section-060/module-02/course-03-values-version-skew-and-the-pre-upgrade-checklist.md
+  prompt: A team plans to upgrade Kyverno on a cluster that runs an old Kubernetes
+    version. Where do they read which Kubernetes versions the chart accepts?
+  options:
+  - id: a
+    text: In the `kubeVersion` line of `helm show chart kyverno/kyverno`, and in the
+      release notes.
+    explanation: Correct. The chart states a range and the notes may add limits.
+  - id: b
+    text: In `helm history`, where each revision lists its Kubernetes version.
+    explanation: History shows the chart and app version, not a Kubernetes limit.
+  - id: c
+    text: In `helm status`, which lists supported Kubernetes versions.
+    explanation: It shows the release state.
+  - id: d
+    text: 'Nowhere: charts install on every Kubernetes version.'
+    explanation: A chart can refuse a cluster outside its range.
+  correct_option: a
+  explanation: The chart's `kubeVersion` and the release notes state the supported
+    Kubernetes versions.
+- id: ats008-060-q12
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Follow a pre-upgrade checklist
+  source_readings:
+  - sections/section-060/module-02/course-03-values-version-skew-and-the-pre-upgrade-checklist.md
+  prompt: A team wants `helm upgrade` to wait until the Pods are ready and fail if
+    they are not ready in five minutes. Which flags do that?
+  options:
+  - id: a
+    text: "`--wait --timeout 5m`"
+    explanation: Correct. `--wait` waits for the Pods and `--timeout` sets how long.
+  - id: b
+    text: "`--reuse-values --history-max 5`"
+    explanation: Those control values and the number of saved revisions.
+  - id: c
+    text: "`--skip-crds`"
+    explanation: This only skips CRDs on an install-style upgrade.
+  - id: d
+    text: "`--description 5m`"
+    explanation: This only adds text to a rollback.
+  correct_option: a
+  explanation: Use `--wait` with `--timeout` so the command does not report success
+    before the ships are ready.

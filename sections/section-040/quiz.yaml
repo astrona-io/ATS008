@@ -1,0 +1,345 @@
+# Knowledge check for section 040. Listed in astrona.yaml as a `type: quiz` entry after the capstone lab.
+schema_version: 1
+kind: question_bank
+id: ats008-040
+course_id: ATS008
+exam_code: KCA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: section
+  id: section-040
+  title: "Configuring Kyverno RBAC, Roles, and Permissions"
+questions:
+  - id: ats008-040-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: Match each aggregation label to the controller it extends
+    source_readings:
+    - sections/section-040/module-01/course-01-serviceaccounts-and-aggregated-clusterroles.md
+    prompt: A team wants the reports controller to read a custom resource. They write
+      a ClusterRole and must stamp it so the reports controller collects it. Which label
+      do they use?
+    options:
+    - id: a
+      text: '`rbac.kyverno.io/aggregate-to-background-controller: "true"`'
+      explanation: This label extends the background controller, which builds and repairs
+        objects. The reports controller does not collect it.
+    - id: b
+      text: "`app.kubernetes.io/name: kyverno-reports-controller`"
+      explanation: This label marks the chart's own cards. A card made by hand with
+        it would not be the supported way, and the chart can change it.
+    - id: c
+      text: '`rbac.kyverno.io/aggregate-to-reports-controller: "true"`'
+      explanation: Correct. The label ends with the name of the controller that receives
+        the permission, so the reports controller's master ClusterRole collects this
+        card.
+    correct_option: c
+    explanation: Each master ClusterRole selects the label `rbac.kyverno.io/aggregate-to-<controller>-controller`.
+      Only a card with the matching label is added.
+  - id: ats008-040-q02
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: Diagnose a generate rule that builds nothing for lack of RBAC
+    source_readings:
+    - sections/section-040/module-01/course-02-granting-extra-permissions-safely.md
+    prompt: The ClusterPolicy `generate-default-quota` is Ready, but a new namespace
+      gets no `ResourceQuota`, and an `UpdateRequest` stays unfinished. `kubectl auth
+      can-i create resourcequotas --as=system:serviceaccount:kyverno:kyverno-background-controller`
+      prints `no`. What is the cause and the right fix?
+    options:
+    - id: a
+      text: The background controller has no card that allows creating `resourcequotas`.
+        Add a new ClusterRole with the background label.
+      explanation: Correct. The background controller carries out `generate` rules,
+        so its service account needs `create` on the target kind. A new labelled ClusterRole
+        adds it without touching a shipped role.
+    - id: b
+      text: The admission controller is down. Restart it.
+      explanation: The admission controller answers requests. Building the object is
+        the background controller's job.
+    - id: c
+      text: The policy is invalid. Change `synchronize` to `false`.
+      explanation: The policy was accepted and Ready. `synchronize` changes what happens
+        after creation, not whether the controller may create the object.
+    - id: d
+      text: Edit `kyverno:background-controller:core` and add `resourcequotas`.
+      explanation: This works until the next `helm upgrade` writes the chart's version
+        of the role back. Add a new ClusterRole instead.
+    correct_option: a
+    explanation: A valid policy can still fail when the crew that carries it out lacks
+      a clearance card. `can-i --as` proves it.
+  - id: ats008-040-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: Explain what the built-in view role binding gives the controllers
+    source_readings:
+    - sections/section-040/module-01/course-01-serviceaccounts-and-aggregated-clusterroles.md
+    prompt: A rule in the background controller needs to read an existing `NetworkPolicy`,
+      and no one granted that. It works anyway. Which part of the default setup explains
+      this?
+    options:
+    - id: a
+      text: The cleanup controller reads it for them.
+      explanation: The cleanup controller does not read objects for other controllers,
+        and it has no `view` binding.
+    - id: b
+      text: Every Kyverno controller is bound to `cluster-admin`.
+      explanation: None of the controllers is bound to `cluster-admin`. Their write
+        access is narrow.
+    - id: c
+      text: The `:core` card allows every verb on every kind.
+      explanation: The `:core` cards list specific kinds and verbs. They do not use
+        wildcards for everything.
+    - id: d
+      text: The admission, background and reports controllers are bound to the built-in
+        `view` ClusterRole, which lets them read most built-in kinds.
+      explanation: Correct. The `view` pass allows get, list and watch on most namespaced
+        built-in objects, so reading needs no extra card.
+    correct_option: d
+    explanation: Read access to built-in kinds comes from `view`. Write access comes
+      from the aggregated cards. The cleanup controller has no `view` binding.
+  - id: ats008-040-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: Choose the right fix instead of editing a shipped role
+    source_readings:
+    - sections/section-040/module-01/course-02-granting-extra-permissions-safely.md
+    prompt: A colleague proposes running `kubectl edit clusterrole kyverno:background-controller:core`
+      to add `networkpolicies`. It would work today. Why does the team reject it?
+    options:
+    - id: a
+      text: Kubernetes forbids editing any ClusterRole.
+      explanation: Editing is allowed. It is just not durable.
+    - id: b
+      text: The chart writes its roles again on every `helm upgrade`, so the edit is
+        lost without a warning.
+      explanation: Correct. Shipped roles belong to the release. A separate ClusterRole
+        with the aggregation label is not touched by the upgrade.
+    - id: c
+      text: The label `rbac.kyverno.io/aggregate-to-background-controller` only works
+        on `:core` roles.
+      explanation: The label works on any ClusterRole. That is the purpose of aggregation.
+    - id: d
+      text: Edits to ClusterRoles need a restart of the background controller.
+      explanation: Aggregated roles update live. No restart is needed.
+    correct_option: b
+    explanation: Add a new, stamped card. Never change the cards the chart ships.
+  - id: ats008-040-q05
+    type: single_choice
+    difficulty: advanced
+    learning_objective: Read the effect of a ClusterRole's apiGroups field
+    source_readings:
+    - sections/section-040/module-01/course-02-granting-extra-permissions-safely.md
+    prompt: 'A learner applies a ClusterRole with the background label and `apiGroups:
+      [""]`, `resources: ["networkpolicies"]`. `can-i create networkpolicies.networking.k8s.io`
+      still prints `no`. What is wrong?'
+    options:
+    - id: a
+      text: The label must be on the ServiceAccount, not the ClusterRole.
+      explanation: The label belongs on the ClusterRole. Aggregation selects ClusterRoles.
+    - id: b
+      text: "`create` is not a valid verb in an aggregated role."
+      explanation: "`create` is valid. Verbs are not limited."
+    - id: c
+      text: "`NetworkPolicy` is in the `networking.k8s.io` group. The empty group string
+        means the core group, so the rule matches nothing here."
+      explanation: Correct. The `apiGroups` entry must be the group of the kind. Core
+        kinds such as `resourcequotas` use `""`; `networkpolicies` use `networking.k8s.io`.
+    - id: d
+      text: ClusterRoles for generate rules must be named `kyverno-generate-*`.
+      explanation: Any name works. Only the label matters.
+    correct_option: c
+    explanation: A rule matches on group, resource and verb. A wrong group makes it
+      match nothing.
+  - id: ats008-040-q06
+    type: single_choice
+    difficulty: beginner
+    learning_objective: Say what the cleanup controller may do by default
+    source_readings:
+    - sections/section-040/module-02/course-01-what-each-controller-may-do-by-default.md
+    prompt: A cleanup policy targets ConfigMaps. With default chart values, what may
+      the cleanup controller do with ConfigMaps?
+    options:
+    - id: a
+      text: It may read them (get, list, watch) but not delete them.
+      explanation: Correct. The shipped cleanup card has get, list and watch on configmaps.
+        A card with `delete` must be added.
+    - id: b
+      text: It may delete them, because it is the controller for deletion.
+      explanation: Its default cards do not include `delete` on ConfigMaps or on workload
+        kinds.
+    - id: c
+      text: It may read, create and delete them.
+      explanation: It has no `create` or `delete` on ConfigMaps by default.
+    - id: d
+      text: It may do nothing with them, not even read them.
+      explanation: It may read ConfigMaps, which it needs to evaluate policies.
+    correct_option: a
+    explanation: The salvage crew can only remove what a card allows. Default cards
+      allow it to read ConfigMaps only.
+  - id: ats008-040-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: Name what fails when the reports controller lacks permission
+      on a custom resource
+    source_readings:
+    - sections/section-040/module-02/course-02-when-a-controller-lacks-a-permission.md
+    prompt: The policy `beacons-need-owner` is Ready and new Beacons are checked at
+      admission. No policy report shows a result for the existing Beacon. The reports
+      controller log shows forbidden errors for `beacons`. What is the fix?
+    options:
+    - id: a
+      text: Grant the admission controller `list` on beacons.
+      explanation: Admission already works. The scan runs in the reports controller.
+    - id: b
+      text: Set the policy to Enforce.
+      explanation: This changes what happens to new requests, not whether existing objects
+        are scanned.
+    - id: c
+      text: Delete and recreate the Beacon.
+      explanation: The object is fine. The crew that reads it has no permission.
+    - id: d
+      text: Grant the reports controller `get`, `list` and `watch` on `beacons.fleet.example.com`,
+        for example with a ClusterRole that carries `rbac.kyverno.io/aggregate-to-reports-controller`.
+      explanation: Correct. The background scan lists existing objects, and the `view`
+        pass does not cover custom resources.
+    correct_option: d
+    explanation: Admission works from the request. Reports need to list and watch the
+      kind, so the reports controller needs its own card.
+  - id: ats008-040-q08
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: Prove a grant with kubectl auth can-i
+    source_readings:
+    - sections/section-040/module-01/course-02-granting-extra-permissions-safely.md
+    - sections/section-040/module-02/course-02-when-a-controller-lacks-a-permission.md
+    prompt: You applied a labelled ClusterRole for the cleanup controller. Which command
+      proves, without waiting for a schedule, that it took effect?
+    options:
+    - id: a
+      text: "`kubectl auth can-i delete configmaps -n debris`"
+      explanation: This asks about your own user, not the cleanup controller.
+    - id: b
+      text: "`kubectl auth can-i delete configmaps -n debris --as=system:serviceaccount:kyverno:kyverno-cleanup-controller`"
+      explanation: Correct. `--as` asks the clearance office about that service account,
+        and `can-i` answers `yes` or `no` at once.
+    - id: c
+      text: "`kubectl get clusterrole kyverno:cleanup-controller`"
+      explanation: This shows the master card, which Kubernetes builds from the others,
+        and does not answer for one verb as clearly.
+    - id: d
+      text: "`helm get values kyverno`"
+      explanation: This shows chart values, not the live permission of a service account.
+    correct_option: b
+    explanation: Use `--as=system:serviceaccount:kyverno:<name>` to ask for the right
+      identity.
+  - id: ats008-040-q09
+    type: single_choice
+    difficulty: advanced
+    learning_objective: Grant only what a cleanup job needs
+    source_readings:
+    - sections/section-040/module-02/course-02-when-a-controller-lacks-a-permission.md
+    prompt: A cleanup policy deletes expired ConfigMaps in `scrap`. Which ClusterRole
+      is the best grant for the cleanup controller?
+    options:
+    - id: a
+      text: A ClusterRole with the cleanup label that allows every verb on every resource.
+      explanation: This works and gives the crew the power to delete anything in the
+        cluster.
+    - id: b
+      text: A ClusterRole with the background label that allows `delete` on `configmaps`.
+      explanation: The background label extends the background controller. The cleanup
+        controller does not collect it.
+    - id: c
+      text: A ClusterRole with the cleanup label that allows `get`, `list` and `delete`
+        on `configmaps` in the core group.
+      explanation: Correct. It lets the crew find and delete ConfigMaps and nothing
+        else, which is least privilege.
+    - id: d
+      text: A ClusterRoleBinding of the cleanup service account to `cluster-admin`.
+      explanation: This is the widest grant and breaks least privilege.
+    correct_option: c
+    explanation: Name the kind and the verbs. Stamp the card for the crew that needs
+      it.
+  - id: ats008-040-q10
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: Use the chart value clusterRole.extraResources
+    source_readings:
+    - sections/section-040/module-02/course-03-chart-values-for-permissions-and-least-privilege.md
+    prompt: You set `reportsController.rbac.clusterRole.extraResources` in a values
+      file and upgrade. Which object does the chart create?
+    options:
+    - id: a
+      text: A ClusterRole named `kyverno:reports-controller:additional`, which the reports
+        controller's master card collects.
+      explanation: Correct. The chart renders an `:additional` card with the component
+        labels that the master card selects.
+    - id: b
+      text: A new ServiceAccount for the reports controller.
+      explanation: "`clusterRole.extraResources` adds rules. It does not create service
+        accounts."
+    - id: c
+      text: Nothing. The value is only read by the admission controller.
+      explanation: Each controller has its own value, and this one belongs to the reports
+        controller.
+    - id: d
+      text: A change to the shipped `:core` card.
+      explanation: That is what `coreClusterRole.extraResources` does. `clusterRole.extraResources`
+        builds a separate card.
+    correct_option: a
+    explanation: "`clusterRole.extraResources` builds `kyverno:<controller>-controller:additional`."
+  - id: ats008-040-q11
+    type: single_choice
+    difficulty: advanced
+    learning_objective: Predict how a values list replaces the default list
+    source_readings:
+    - sections/section-040/module-02/course-03-chart-values-for-permissions-and-least-privilege.md
+    prompt: An installer sets `backgroundController.rbac.coreClusterRole.extraResources`
+      to one rule for `configmaps`. The default list also held `resourcequotas` and
+      `networkpolicies`. What happens to those?
+    options:
+    - id: a
+      text: They stay, because Helm merges lists.
+      explanation: Helm merges maps key by key, but a list is replaced as a whole.
+    - id: b
+      text: They stay, because the `view` role grants them.
+      explanation: The `view` pass allows reads only, not create, update or delete.
+    - id: c
+      text: They move to the admission controller.
+      explanation: Nothing moves between controllers.
+    - id: d
+      text: They are no longer granted, because a list in a values file replaces the
+        default list.
+      explanation: Correct. Helm replaces lists as a whole. To keep the defaults you
+        would copy them into your list.
+    correct_option: d
+    explanation: A new list replaces the old one. This is how the labs remove the chart's
+      default grant.
+  - id: ats008-040-q12
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: Audit what the controllers hold
+    source_readings:
+    - sections/section-040/module-02/course-03-chart-values-for-permissions-and-least-privilege.md
+    prompt: An auditor asks you to show that no Kyverno controller holds unlimited power.
+      Which check answers best?
+    options:
+    - id: a
+      text: Run `kubectl get pods -n kyverno` and check that all are Running.
+      explanation: A running pod says nothing about permissions.
+    - id: b
+      text: Run `kubectl auth can-i '*' '*' --as=system:serviceaccount:kyverno:<name>`
+        for each of the four service accounts and expect `no`.
+      explanation: Correct. This asks each identity for every verb on every resource.
+    - id: c
+      text: Read the Helm release history.
+      explanation: The history lists revisions, not what each service account may do.
+    - id: d
+      text: Check that `rbac.create` is `true`.
+      explanation: This only says the chart builds the roles. It does not say how wide
+        they are.
+    correct_option: b
+    explanation: Ask the clearance office the widest question, and list labelled ClusterRoles
+      to see who added grants.

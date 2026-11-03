@@ -1,0 +1,19 @@
+# Sizing, Disruption Budgets and Spreading Replicas (PLAYGROUND) - a clean
+# practice environment.
+# Status: UNTESTED (written statically, not yet run against a cluster).
+#
+# Starting state: a single-node kind cluster with Kyverno installed with Helm
+# at default values (release `kyverno`, namespace `kyverno`, one replica per
+# controller). The learner resizes it with `helm upgrade`. No task, no
+# grading, no `astrona submit`.
+metadata:
+  name: ats-008-playground-050-02
+  docs:
+    guide: docs/overview.md
+
+bootstrap:
+  init:
+    - name: prepare
+      description: "Adds the Kyverno Helm repository and installs Kyverno at default values"
+      type: file
+      source: bootstrap/prepare.sh

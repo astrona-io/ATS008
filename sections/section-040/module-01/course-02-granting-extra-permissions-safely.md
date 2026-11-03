@@ -1,18 +1,32 @@
-# Part 2 — Granting Extra Permissions Safely
+# Granting Extra Permissions Safely
 
-> Prerequisite: [Part 1 — ServiceAccounts, Aggregated ClusterRoles & Built-in View Access](./course-01-serviceaccounts-and-aggregated-clusterroles.md). Next: [Section 050 — High Availability Installations](../../section-050/module-01/course.md).
+A policy can be perfectly valid and still do nothing, because the crew that must carry it out has no clearance card for the job. In this part you watch that happen with a `generate` rule, then fix it with a new stamped ClusterRole. You also learn why you never edit the cards Kyverno shipped.
 
 ## Why a valid policy can still fail
 
-A `generate` rule tells Kyverno's background controller to create a resource in response to some trigger — a new Namespace, say. The *policy* can be perfectly valid YAML, applied without error, and still do nothing, because the background controller's ServiceAccount doesn't have `create` (or `update`, for `synchronize: true`) permission on the target resource kind.
+A `generate` rule tells the background controller to build an object when something happens, for example a new namespace. The policy can be accepted without any error. If the background controller's service account may not create the target kind, the object never appears.
 
-This is not a Kyverno bug — it's the aggregated-RBAC model from Part 1 working as designed. Kyverno ships default permissions for the resource kinds its own bundled example policies commonly touch; the moment your `generate` rule targets something else, you need to grant that permission yourself.
+Kyverno's chart gives the background controller a default list of kinds it may create, such as `ResourceQuota`, `NetworkPolicy`, `Role` and `RoleBinding`. The list is the chart value `backgroundController.rbac.coreClusterRole.extraResources`. Your playground empties that list so you can see the failure. When a rule targets a kind that is not on the list, the same failure happens on a normal install.
 
-## The correct fix: a new, labeled ClusterRole
+<!-- astrona:playground:renew -->
 
-Kyverno's own guidance is explicit: **default roles should not be modified — new roles should be used to extend them.** The reason is durability: every one of Kyverno's shipped ClusterRoles is reapplied verbatim on every `helm upgrade`. A hand-edit to a shipped role is silently overwritten the next time you upgrade, and the permission gap reappears with no warning.
+### See it in your playground
 
-Instead, create a standalone `ClusterRole` carrying the aggregation label for the controller that needs it:
+Create a namespace. The rule `generate-default-quota` should build a `ResourceQuota` named `default-quota` inside it:
+
+```sh
+kubectl create namespace harbor
+kubectl get resourcequota -n harbor
+kubectl get updaterequest -A
+```
+
+Look for an empty `ResourceQuota` list. An `UpdateRequest` is a work order waiting in the construction crew's queue. Look for one that did not finish, and for a "forbidden" message about `resourcequotas` in `kubectl get events -n harbor` or in `kubectl describe updaterequest -n kyverno`.
+
+## The fix: a new stamped card
+
+Kyverno's rule is plain: do not change the default roles, add new ones. The chart's own ClusterRoles are written again on every `helm upgrade`, so an edit to one is wiped out silently and the problem comes back with no warning.
+
+Instead, write a new ClusterRole that carries the stamp for the crew that needs it. Save this as `clusterrole-kyverno-generate-resourcequota.yaml`:
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -27,24 +41,61 @@ rules:
     verbs: ["get", "list", "watch", "create", "update"]
 ```
 
-Apply this and Kubernetes' aggregation mechanism folds its `rules` into the background controller's effective top-level ClusterRole immediately — no restart, no Helm upgrade, no touching anything Kyverno shipped. Delete it later and the permission disappears just as cleanly.
+The label names the crew (`background`). `apiGroups: [""]` means the core group, where `ResourceQuota` lives. For a kind in another group, such as `NetworkPolicy`, the group is `networking.k8s.io`. The verbs are what the rule needs: it reads the target, creates it and, because of `synchronize: true`, updates it.
 
-> [!TIP]
-> **Try it — confirm the fix landed**
->
-> ```sh
-> kubectl auth can-i create resourcequotas \
->   --as=system:serviceaccount:kyverno:kyverno-background-controller
-> ```
->
-> `yes` confirms the aggregated ClusterRole is in effect for that ServiceAccount's identity — a faster check than re-triggering the `generate` rule and watching for errors.
+Apply it:
 
-## Reference
+```sh
+kubectl apply -f clusterrole-kyverno-generate-resourcequota.yaml
+```
 
-- `kubectl explain clusterrole.rules` — the live schema for RBAC rule entries (`apiGroups`, `resources`, `verbs`).
-- `kubectl auth can-i --as=<serviceaccount> --list` — enumerate everything a given ServiceAccount identity can currently do, useful when diagnosing which permission is actually missing.
+Kubernetes folds the new rules into the background controller's master card within moments. There is no restart and no `helm upgrade`. If you delete the card later, the permission goes away just as cleanly.
+
+### Prove it with the clearance office
+
+Ask again, as the background controller:
+
+```sh
+kubectl auth can-i create resourcequotas --as=system:serviceaccount:kyverno:kyverno-background-controller
+```
+
+Look for `yes`. This is a faster test than waiting for a rule to run. To see everything a service account may do, add `--list` to the command. Then create a second namespace and look for its quota:
+
+```sh
+kubectl create namespace dock
+kubectl get resourcequota default-quota -n dock
+```
+
+The `ResourceQuota` appears in `dock`. It does not appear in `harbor`, because the rule fired for that namespace before the permission existed. A rule that already failed is not replayed for the old namespace by this change.
+
+## Your mission: ClusterRole Aggregation Lab
+
+You can now find out why a `generate` rule builds nothing and grant the background controller the missing permission with a new, stamped ClusterRole. The mission asks you to do this on a fresh cluster, for `ResourceQuota` objects in the namespaces `carts` and `checkout-svc`, without touching any ClusterRole that Kyverno shipped.
+
+Pause the playground first, so the lab has the memory it needs:
+
+```sh
+astrona stop ats-008-playground-040-01
+```
+
+Start the lab, then grade it when you are done:
+
+```sh
+astrona run --git ssh://git@github.com/astrona-io/ATS008.git -c sections/section-040/module-01/labs/lab-01
+astrona submit --git ssh://git@github.com/astrona-io/ATS008.git -c sections/section-040/module-01/labs/lab-01
+```
+
+When you are done, remove the lab and start the playground again:
+
+```sh
+astrona destroy ats-008-lab-007
+astrona start ats-008-playground-040-01
+```
+
+## Common pitfalls
 
 > [!WARNING]
-> **Common pitfall**
->
-> Editing one of Kyverno's shipped `...-core` ClusterRoles directly (`kubectl edit clusterrole kyverno:background-controller:core` or similar) because it's the fastest thing that seems to work. It does work — until the next `helm upgrade` reapplies the chart's version of that role and quietly reverts your edit. Always add a new, separately-named ClusterRole instead.
+> - **Editing a shipped card.** `kubectl edit clusterrole kyverno:background-controller:core` seems to work, until the next `helm upgrade` writes the chart's version back. Add a new card with the stamp.
+> - **Using the wrong API group.** `networkpolicies` needs `networking.k8s.io`. With `apiGroups: [""]` the rule matches nothing and `can-i` keeps answering `no`.
+> - **Forgetting the stamp.** A ClusterRole without the `rbac.kyverno.io/aggregate-to-background-controller: "true"` label is never collected. The card exists and does nothing.
+> - **Waiting for the old namespace to be repaired.** A rule that failed once is not replayed. Create a new namespace to test the fix.

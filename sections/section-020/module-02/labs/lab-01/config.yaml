@@ -1,0 +1,36 @@
+# Cleanup Policy Lab (ats-008-lab-014). Graded against the live cluster.
+# Status: UNTESTED (written statically, not yet run against a cluster).
+metadata:
+  name: "ats-008-lab-014"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-kyverno"
+      description: "Installs Kyverno onto the kind cluster with Helm at default values"
+      type: "file"
+      source: "bootstrap/01-install-kyverno.sh"
+    - name: "lab-014-setup"
+      description: "Creates the salvage-yard and outpost namespaces"
+      type: "file"
+      source: "bootstrap/02-seed-namespaces.sh"
+
+validation:
+  scripts:
+    - name: "cleanup-policy-defined"
+      description: "The CleanupPolicy remove-scrap exists in salvage-yard, matches ConfigMaps and runs every minute"
+      type: "file"
+      source: "validation/validate-policy.sh"
+      hint: "Create a CleanupPolicy (not a ClusterCleanupPolicy) named remove-scrap in salvage-yard. It matches kind ConfigMap and has the schedule * * * * *."
+    - name: "cleanup-controller-clearance"
+      description: "The cleanup controller may delete ConfigMaps in salvage-yard"
+      type: "file"
+      source: "validation/validate-permission.sh"
+      hint: "Add a ClusterRole that allows get, list, watch and delete on configmaps and carries the label rbac.kyverno.io/aggregate-to-cleanup-controller: \"true\". Check with kubectl auth can-i."
+    - name: "cleanup-behaviour"
+      description: "A labelled ConfigMap is deleted within a bounded time and non-matching ConfigMaps are kept"
+      type: "file"
+      source: "validation/validate-behaviour.sh"
+      hint: "The grader creates ConfigMaps in salvage-yard and outpost and waits up to three minutes. Only ConfigMaps with the label scrap=true in salvage-yard may be removed."

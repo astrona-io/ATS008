@@ -1,27 +1,41 @@
 # Solution Walkthrough
 
-Follow these steps to diagnose the RBAC gap and fix it correctly:
+You will look at a generate rule that builds nothing, add one new ClusterRole with the right label, and prove the next namespace gets its quota. You do not touch any ClusterRole that Kyverno shipped.
+
+| Goal | Where it lives | Command or file |
+| --- | --- | --- |
+| Give the background controller a permission | A new ClusterRole with the aggregation label | `kubectl apply -f` a YAML file |
+| Check the permission without waiting | The clearance office | `kubectl auth can-i ... --as=system:serviceaccount:kyverno:kyverno-background-controller` |
+| See the live effect | A new namespace | `kubectl get resourcequota -n <namespace>` |
+
+## The feedback loop
+
+Grading runs from the terminal where you typed `astrona run`:
+
+```bash
+astrona submit --git ssh://git@github.com/astrona-io/ATS008.git -c sections/section-040/module-01/labs/lab-01
+```
+
+The checks are `clusterrole-exists` (the role exists with the label and the `resourcequotas` rule), `shipped-roles-untouched` (the chart's own background role has no `resourcequotas` rule of its own), `permission-live` (`can-i create resourcequotas` is `yes` for the background controller) and `quota-generated` (`default-quota` exists in `checkout-svc`). All four start red, and the grader stops at the first one that fails. Run the command now, then again after every step.
 
 ---
 
-## Step 1: Confirm the ResourceQuota Was Not Generated
+## Step 1: Look at the starting state
 
 ```sh
 kubectl create namespace carts
 kubectl get resourcequota -n carts
-```
-Expect no `default-quota` ResourceQuota to exist. Check for evidence of the RBAC failure:
-```sh
-kubectl get events -n carts
 kubectl get updaterequest -A
 ```
-You should see an error referencing forbidden/permission-denied on `resourcequotas`, or an `UpdateRequest` stuck in a failed/pending state.
+
+No `default-quota` exists in `carts`. Look for an `UpdateRequest` that did not finish, or a "forbidden" message about `resourcequotas` in `kubectl get events -n carts`. No check turns green in this step.
 
 ---
 
-## Step 2: Author the Aggregated ClusterRole
+## Step 2: Create the labelled ClusterRole
 
-Create `kyverno-generate-resourcequota.yaml`:
+Save this as `clusterrole-kyverno-generate-resourcequota.yaml`:
+
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -34,38 +48,51 @@ rules:
     resources: ["resourcequotas"]
     verbs: ["get", "list", "watch", "create", "update"]
 ```
+
+- `labels` is the stamp. It makes the background controller's master card collect this card.
+- `apiGroups: [""]` is the core group, where `ResourceQuota` lives.
+- `verbs` are the actions the rule needs.
+
 Apply it:
+
 ```sh
-kubectl apply -f kyverno-generate-resourcequota.yaml
+kubectl apply -f clusterrole-kyverno-generate-resourcequota.yaml
 ```
-This does not touch any ClusterRole Kyverno itself shipped — it is a brand-new object that Kubernetes' ClusterRole aggregation folds into the background controller's effective permissions automatically.
+
+**Run the check.** `clusterrole-exists` and `shipped-roles-untouched` now pass.
 
 ---
 
-## Step 3: Confirm the Permission Landed
+## Step 3: Prove the permission
 
 ```sh
-kubectl auth can-i create resourcequotas \
-  --as=system:serviceaccount:kyverno:kyverno-background-controller
+kubectl auth can-i create resourcequotas --as=system:serviceaccount:kyverno:kyverno-background-controller
 ```
-Expect `yes`.
+
+Look for `yes`. If it says `no`, wait a few seconds and ask again. **Run the check.** `permission-live` now passes.
 
 ---
 
-## Step 4: Confirm the Fix Works Going Forward
+## Step 4: Create the second namespace
 
 ```sh
 kubectl create namespace checkout-svc
-kubectl get resourcequota default-quota -n checkout-svc -o yaml
+kubectl get resourcequota default-quota -n checkout-svc
 ```
-The `default-quota` ResourceQuota should now exist in `checkout-svc` with `spec.hard.pods: "10"`.
+
+The quota appears within a few seconds. **Run the check.** `quota-generated` now passes.
 
 ---
 
-## Step 5: Verify Your Configuration
+## Step 5: Submit
 
-```sh
-kubectl get clusterrole kyverno-generate-resourcequota -o yaml
-kubectl get resourcequota default-quota -n checkout-svc
+```bash
+astrona submit --git ssh://git@github.com/astrona-io/ATS008.git -c sections/section-040/module-01/labs/lab-01
 ```
-Once verified, run the local validation suite to pass the lab!
+
+## If a check stays red
+
+- **`clusterrole-exists` fails: missing label.** The label must be exactly `rbac.kyverno.io/aggregate-to-background-controller` with the value `"true"`.
+- **`shipped-roles-untouched` fails.** You edited `kyverno:background-controller:core`. Remove your change and use the new ClusterRole only.
+- **`permission-live` fails.** The rule is in the wrong API group, or the label names another controller.
+- **`quota-generated` fails.** Wait up to a minute and run `kubectl get updaterequest -A`. The old namespace `carts` is not repaired. Check `checkout-svc`.

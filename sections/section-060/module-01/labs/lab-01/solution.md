@@ -42,7 +42,7 @@ kubectl get pods -n kyverno
 kubectl get crd clusterpolicies.kyverno.io
 ```
 
-Expect every pod in the `kyverno` namespace `Running`, the admission controller Deployment now showing `3/3` ready replicas, and the `clusterpolicies.kyverno.io` CRD still present — proof the upgrade didn't disturb Kyverno's CRD surface.
+Expect every pod in the `kyverno` namespace `Running` (a pod for the finished `kyverno-migrate-resources` hook Job shows `Completed`, which is fine), the admission controller Deployment now showing `3/3` ready replicas, and the `clusterpolicies.kyverno.io` CRD still present — proof the upgrade didn't disturb Kyverno's CRD surface.
 
 ---
 

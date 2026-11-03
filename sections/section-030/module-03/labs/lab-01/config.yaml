@@ -1,0 +1,45 @@
+# Status: UNTESTED (written statically, not yet run against a cluster).
+#
+# Webhooks, Failure Policy and Certificates Lab. Graded against the live
+# cluster. Starting state: Kyverno installed with Helm at default values
+# (release kyverno, namespace kyverno), an empty namespace mission-ops, the
+# ClusterPolicy audit-owner-label, and a ConfigMap lab-baseline in the default
+# namespace that holds the starting certificate serial.
+metadata:
+  name: "ats-008-lab-017"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-kyverno"
+      description: "Installs Kyverno onto the kind cluster via Helm at baseline values, creates mission-ops and the policy audit-owner-label, and records the starting certificate"
+      type: "file"
+      source: "bootstrap/01-install-kyverno.sh"
+
+validation:
+  scripts:
+    - name: "webhook-selector"
+      description: "The Kyverno webhooks skip mission-ops and still skip kube-system"
+      type: "file"
+      source: "validation/validate-webhook-selector.sh"
+      hint: "Set config.webhooks.namespaceSelector with a NotIn expression on kubernetes.io/metadata.name. The list replaces the default, so write kube-system and mission-ops."
+    - name: "failure-policy"
+      description: "forceFailurePolicyIgnore is on and no live resource webhook has failurePolicy Fail"
+      type: "file"
+      source: "validation/validate-failure-policy.sh"
+      hint: "Set features.forceFailurePolicyIgnore.enabled to true. The admission controller restarts and rewrites the webhooks."
+    - name: "certificate"
+      description: "The admission controller certificate was replaced"
+      type: "file"
+      source: "validation/validate-certificate.sh"
+      hint: "Delete the secret kyverno-svc.kyverno.svc.kyverno-tls-pair in the kyverno namespace. Kyverno issues a new certificate."
+    - name: "changes-made-with-helm"
+      description: "The Helm release holds the settings, has more than one revision and the admission controller is ready"
+      type: "file"
+      source: "validation/validate-helm-managed.sh"
+      hint: "Make every setting change with helm upgrade --reuse-values. A kubectl edit is not kept in the release."
+
+teardown:
+  keepCluster: false

@@ -1,0 +1,32 @@
+# Sizing and Spreading Kyverno (LAB). Graded against the live cluster.
+# Status: UNTESTED (written statically, not yet run against a cluster).
+metadata:
+  name: "ats-008-lab-019"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "add-helm-repo"
+      description: "Adds and updates the Kyverno Helm repo"
+      type: "file"
+      source: "bootstrap/01-add-helm-repo.sh"
+
+validation:
+  scripts:
+    - name: "verify-replicas"
+      description: "Kyverno is a Helm release with 3 admission and 2 background replicas, all ready"
+      type: "file"
+      source: "validation/validate-replicas.sh"
+      hint: "Install the release kyverno in namespace kyverno with admissionController.replicas 3 and backgroundController.replicas 2, then wait for the rollouts."
+    - name: "verify-pdb"
+      description: "The admission PodDisruptionBudget allows one disruption and the background one keeps one Pod"
+      type: "file"
+      source: "validation/validate-pdb.sh"
+      hint: "Set admissionController.podDisruptionBudget.maxUnavailable to 1 and minAvailable to null. Read the result with kubectl get pdb -n kyverno -o yaml."
+    - name: "verify-spread"
+      description: "The admission Deployment has the topology spread constraint and the priority class"
+      type: "file"
+      source: "validation/validate-spread.sh"
+      hint: "Read spec.template.spec.topologySpreadConstraints and priorityClassName on the admission Deployment. The label selector must match the admission controller component label."

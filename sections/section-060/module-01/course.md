@@ -1,34 +1,41 @@
 # Upgrading a Running Kyverno Installation
 
-"Just bump the version" sounds trivial for most workloads. It is not trivial for Kyverno, because Kyverno's admission controller sits directly in the write path of every resource your cluster's API server accepts. If an upgrade goes wrong mid-rollout — a webhook briefly unreachable, a CRD field that changed shape, a policy that behaves differently against the new binary — the blast radius isn't "one app had a bad deploy," it's "nothing could be created or updated cluster-wide for a few seconds." That's not a reason to fear upgrades. It's a reason to do them the way this module describes: deliberately, with the right tool, with a backup in hand, and with a clear idea of what "verified healthy" actually means afterward.
+Kyverno is the inspection authority of your solar system. Every launch request passes through its admission controller, the inspectors at the launch gate. If an upgrade goes wrong while the inspectors are changing shifts, nothing new can be filed at the registry desk for a while. So you do not "just bump the version". You refit the station in orbit on purpose, with the right tool, a backup in hand and a clear idea of what "healthy" means afterwards.
+
+Helm is the shipyard crane, and a Helm release is one assembled station with its own flight record. Each upgrade adds one entry, called a **revision**, to that flight record. This module shows how to add that entry safely.
 
 ```mermaid
-flowchart TD
-    subgraph Helm["Helm path (recommended)"]
-        A1["Read release notes\n(target + every skipped minor version)"] --> A2["helm upgrade kyverno kyverno/kyverno"]
-        A2 --> A3["CRDs auto-updated\n(dedicated CRD chart dependency)"]
-        A3 --> A4["Rollout + helm status/history"]
-    end
-    subgraph Manifest["Manifest path (no in-place upgrade)"]
-        B1["kubectl delete -f OLD install.yaml"] --> B2["kubectl create -f NEW install.yaml"]
-    end
+flowchart TB
+    R["Release notes"] -->|"read first"| U["helm upgrade"]
+    U -->|"new revision"| H["helm history"]
+    U -->|"rolling update"| P["Controller pods"]
+    P -->|"rollout status"| C["Healthy cluster"]
 ```
+
+The diagram shows the order of an upgrade: read the notes, run `helm upgrade`, then confirm both the flight record and the pods.
 
 ## How this module is organised
 
-1. **[Part 1 — The Helm Upgrade Path](./course-01-the-helm-upgrade-path.md)** — the `helm upgrade` command itself, why release notes matter for every version you skip, and the CRD-upgrade behavior that catches most Helm users off guard.
-2. **[Part 2 — Manifest Upgrades & Post-Upgrade Validation](./course-02-manifest-upgrades-and-post-upgrade-validation.md)** — why a plain-manifest install has no in-place upgrade path, the `kyverno migrate` CLI, and the backup/verify checklist to run around every upgrade.
+1. **The Helm Upgrade Path** covers the `helm upgrade` command, why `--reuse-values` matters, why you read the release notes for every version you skip, and what happens to Kyverno's custom resource definitions (CRDs) when you upgrade.
+2. **Manifest Upgrades and Post-Upgrade Validation** covers why a station built by hand from a parts list has no in-place refit, what `kyverno migrate` does, and the backup and verification routine around every upgrade. It ends with the mission for this module.
 
 ## Learning objectives
 
 After this module you can:
 
-- Run `helm upgrade` against an existing Kyverno release to change values or bump the chart version.
-- Explain why Kyverno's CRDs *are* updated by a normal `helm upgrade`, unlike CRDs shipped in many other charts' special `crds/` directory.
-- Explain why a manifest-based (`kubectl create -f install.yaml`) install cannot be upgraded in place, and what the correct procedure is instead.
-- Back up existing `ClusterPolicy`/`Policy` objects before an upgrade, and verify an upgrade's success with `helm status`, `helm history`, and rollout checks.
-- Describe what `kyverno migrate` is for.
+- Run `helm upgrade` against an existing Kyverno release to change values or move to a new chart version.
+- Explain why a normal `helm upgrade` also updates Kyverno's CRDs, unlike charts that keep their CRDs in a special `crds/` folder.
+- Explain why a release made with `kubectl create -f install.yaml` cannot be upgraded in place, and what to do instead.
+- Back up `ClusterPolicy` and `Policy` objects before an upgrade.
+- Prove an upgrade worked with `helm status`, `helm history` and rollout checks.
+- Say what `kyverno migrate` is for.
 
 ## Before you start
 
-The linked lab gives you a kind Kubernetes cluster with Kyverno already installed via Helm at a baseline configuration. You should be comfortable with the Helm install/values concepts from Section 010 — this module builds directly on them.
+You need `kubectl`, `helm` and a Kyverno release that was installed with Helm. You do not need anything else. The facts about Helm values that you need are explained where they are used.
+
+## Where you practise
+
+Your playground is a training solar system: a small `kind` cluster on your laptop with the `kyverno` Helm repository added and Kyverno installed with Helm at its default values. The release is called `kyverno`, it lives in the `kyverno` namespace and it is at revision 1. Nothing else is in the cluster, so every change you see comes from your own commands. Launch it now and keep it running next to you while you read:
+
+<!-- astrona:playground -->

@@ -1,37 +1,42 @@
 # Running Kyverno Highly Available
 
-"Just set `replicas: 3`" is good advice for a stateless web server and dangerously incomplete advice for Kyverno. Kyverno is not one workload — it is four independent controllers bundled under one Helm release, and each one was built with a different answer to the question "what happens when I run more than one copy of you?"
+"Just set `replicas: 3`" is good advice for a simple web server. It is not enough for Kyverno. Kyverno is four crews bundled in one Helm release, and each crew has a different answer to the question "what happens when I run more than one copy of you?"
 
-Get this wrong in either direction and you pay for it: under-provision the admission controller and a single Pod restart can stall every write to the cluster; over-provision the background controller expecting more scan throughput and you've just spent extra CPU and memory for zero extra work getting done.
+Get this wrong and you pay for it. If the inspectors at the launch gate (the admission controller) run as a single ship, one restart can stall every launch request in the solar system. If you add ships to a crew that only lets one ship work at a time, you spend fuel and gain nothing.
 
 ```mermaid
 flowchart TB
-    subgraph Admission["Admission Controller — no leader election for traffic"]
-        A1["Replica 1 — actively serving"]
-        A2["Replica 2 — actively serving"]
-        A3["Replica 3 — actively serving"]
-    end
-    subgraph Background["Background / Reports Controller — leader election"]
-        B1["Replica 1 — LEADER, doing the work"]
-        B2["Replica 2 — standby, ready to take over"]
-    end
+  S["Service"] -->|"calls"| A1["admission replica 1"]
+  S -->|"calls"| A2["admission replica 2"]
+  S -->|"calls"| A3["admission replica 3"]
+  L["Lease"] -->|"held by"| B1["background leader"]
+  L -.->|"standby"| B2["background standby"]
 ```
+
+The picture shows the two models. Every admission replica answers calls at the same time. For the background crew, only the replica that holds the lease (the captain's baton) does the work.
 
 ## How this module is organised
 
-1. **[Part 1 — Why Replicas Behave Differently Per Controller](./course-01-why-replicas-behave-differently.md)** — the admission controller's horizontal scaling vs the background/reports controllers' leader election, and the cleanup controller's hybrid model.
-2. **[Part 2 — Installing for HA with Helm](./course-02-installing-for-ha-with-helm.md)** — the documented production install command, why the replica counts differ per controller, and general node-spreading hygiene.
+1. **Why Replicas Behave Differently Per Controller** explains the admission controller's horizontal scaling and the leader election of the other crews.
+2. **Installing for HA with Helm** installs Kyverno with a different replica count per controller, reads the leases, and explains what spreading ships over docks can and cannot do on a one-node training cluster.
 
 ## Learning objectives
 
 After this module you can:
 
-- Explain why the admission controller scales horizontally with no leader election for AdmissionReview traffic, while the background and reports controllers do not.
-- State Kyverno's documented minimum recommended admission-controller replica count for production.
-- Explain what extra replicas actually buy the background, reports, and cleanup controllers (failover, not throughput).
-- Run the documented HA `helm install` command with the correct replica count per controller.
-- Inspect leader-election state on a live cluster using `kubectl get lease -n kyverno`.
+- Explain why the admission controller shares AdmissionReview traffic between all replicas, while the background and reports controllers use leader election for their work.
+- State the minimum replica count for a highly available admission controller.
+- Explain what extra replicas buy the background, reports and cleanup controllers.
+- Run a `helm install` with the right replica count for each controller.
+- Read leader-election state with `kubectl get lease -n kyverno`.
+- Say what the default Pod anti-affinity does, and what a one-node cluster cannot show you.
 
 ## Before you start
 
-You should already be comfortable installing Kyverno via Helm (Section 010) and reading/writing Helm values (`--set`, `-f values.yaml`). The linked lab gives you a kind Kubernetes cluster with `kubectl` and `helm` already configured, and the `kyverno` Helm repo already added — Kyverno itself is not yet installed, since installing it correctly is the graded task.
+You need to know how to install a chart with `helm install` and set a value with `--set`. You also need basic `kubectl`.
+
+## Where you practise
+
+Your playground is a single-node `kind` cluster, a training solar system with one space dock. The `kyverno` Helm repository is added. Kyverno is not installed, because installing it is your job. Launch the playground now and keep it next to you while you read the parts:
+
+<!-- astrona:playground -->

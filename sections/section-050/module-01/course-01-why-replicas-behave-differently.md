@@ -1,53 +1,59 @@
-# Part 1 — Why Replicas Behave Differently Per Controller
+# Why Replicas Behave Differently Per Controller
 
-> Prerequisite: [Landing page](./course.md). Next: [Part 2 — Installing for HA with Helm](./course-02-installing-for-ha-with-helm.md).
+Kyverno has four controllers, and a replica count means something different for each. This part explains the three models, so you know what extra ships buy you before you order them.
 
-## The admission controller: horizontal scaling, no leader election for traffic
+## The admission controller: every replica answers
 
-The admission controller is the one Kyverno process sitting directly in the request path of every write to the cluster — every `kubectl apply`, every controller reconcile loop that creates or updates an object passes through its webhook first. Kyverno's own documentation is explicit about how it scales: **"The admission controller does not use leader election for inbound webhook requests, which means AdmissionReview requests can be distributed and processed by all available replicas."**
+The admission controller sits in the path of every launch request. Each `kubectl apply` goes through the registry desk (the API server), and the desk calls Kyverno's webhook before it accepts the request. Kyverno's documentation says the admission controller does not use leader election for inbound webhook requests, so every available replica can process AdmissionReview requests.
 
-That means three admission-controller replicas genuinely triples your request-handling capacity. Kubernetes' own Service load-balances incoming webhook calls across whichever replicas are Ready, and every one of them independently evaluates policies and returns an admission decision. There is no single "chosen" replica doing the real work while the others idle.
+An **AdmissionReview** is the signal the registry desk sends to an inspector: "may I accept this?" A Kubernetes Service spreads these signals over all ready replicas. Three replicas share the load and keep answering when one is restarted. The documentation says the minimum supported replica count for a highly available admission controller is three.
 
-Kyverno's documented benchmarks back this up under load. With 500 concurrent virtual users hammering the cluster:
+One more fact: more replicas share the load, but they do not split the rule book. Every replica holds all the policies. So the memory each replica needs depends on how many policies you have, not on how many replicas you run.
 
-- A single admission-controller replica saw **p99 latency exceed 1 second**.
-- Three replicas kept **every scenario under 650ms p99**.
-- Three replicas also **cut peak CPU usage per pod from roughly 3033m down to roughly 1182m** under the same extreme load — spreading work across replicas didn't just help latency, it kept any single Pod from being pinned at the CPU limit.
+The admission controller does use leader election for one small job: managing its certificates and the webhook configurations. Only one replica needs to do that at a time. It has nothing to do with who may answer live traffic.
 
-Because of this, Kyverno's own guidance recommends a **minimum of 3 replicas** for the admission controller in any production installation.
+## The background and reports controllers: one captain
 
-The one exception: the admission controller *does* use leader election internally, but only for a secondary, low-frequency job — managing its own TLS certificates and keeping the cluster's webhook configurations up to date. That work only needs one replica doing it at a time; it has nothing to do with how many replicas can serve live traffic.
+The background controller (the construction crew) and the reports controller (the records office) work the other way. Their work is one ordered job. Two replicas doing it at once would duplicate work or collide. So Kyverno uses leader election for the whole job. The documentation says the extra replicas of these two controllers can only be used for availability.
 
-> [!TIP]
-> **Try it — see the elected leader**
->
-> Once Kyverno is installed:
-> ```sh
-> kubectl get lease -n kyverno
-> ```
-> You'll see one or more `Lease` objects — Kubernetes' standard leader-election primitive. Each lease's `holderIdentity` names the Pod currently acting as leader for that piece of work.
+A **Lease** is the Kubernetes object used for leader election. Think of it as the captain's baton. The `holderIdentity` field names the Pod that holds it. The other replicas stand by and watch the baton. If the captain stops renewing the lease, a standby takes it.
 
-## The background and reports controllers: leader election for the real work
+So `backgroundController.replicas=5` does not scan five times faster. It gives you faster recovery if the captain's ship fails. If scans are too slow, you tune the crew's own dials (flags such as `--backgroundScanWorkers`), not the replica count.
 
-The background controller and the reports controller are built the opposite way. Their entire job — periodically re-scanning existing resources against policies, aggregating results into `PolicyReport`/`ClusterPolicyReport`, and finishing `generate`/mutate-existing operations — is inherently stateful and sequential. Running it from multiple replicas at once would mean duplicate work and race conditions, not more throughput.
+## The cleanup controller: a mix
 
-So Kyverno uses Kubernetes leader election here too, but for the *entire* job, not just certificate housekeeping: **"only a single replica will handle reports processing at any given time"** for the reports controller, and **"only a single replica of the background controller will handle the final resource generation"** for the background controller. Every other replica sits idle, watching the `Lease`, ready to take over the instant the current leader stops renewing it.
+The cleanup controller has both a leader-elected part and a part that is not. Certificate and webhook management uses leader election. The documentation says the cleanup handler itself does not, and that extra replicas can serve both availability and scale for cleanup. So do not copy the admission model or the background model onto it. Check each crew on its own.
 
-This means running `backgroundController.replicas: 5` does not scan resources five times faster. It gives you faster failover if the current leader Pod dies — nothing more.
+| Controller | Who does the work | What an extra replica buys |
+| --- | --- | --- |
+| Admission | Every replica, at the same time | Throughput and availability |
+| Background | The lease holder only | Availability |
+| Reports | The lease holder only | Availability |
+| Cleanup | A mix of both models | Availability and scale for cleanup |
+
+## See it in your playground
+
+Kyverno is not installed yet, but you can already ask the chart what it would create. The chart is the station kit, and `helm template` prints the plan without building anything.
+
+<!-- astrona:playground:renew -->
+
+Print the replica lines the chart renders when you give it no replica values:
+
+```sh
+helm template kyverno kyverno/kyverno -n kyverno | grep -n "^  replicas:"
+```
+
+You should see four `replicas:` lines with nothing after them. The chart leaves the value empty, and Kubernetes then runs one ship per Deployment. Now give the admission controller three replicas and look again:
+
+```sh
+helm template kyverno kyverno/kyverno -n kyverno --set admissionController.replicas=3 | grep -n "^  replicas:"
+```
+
+One of the four lines now reads `replicas: 3`. The chart sets the count for exactly the controller you named.
+
+## Common pitfalls
 
 > [!WARNING]
-> **Common pitfall**
->
-> Assuming `backgroundController.replicas` (or `reportsController.replicas`) is a throughput knob. It is not. If background scans are genuinely too slow, the fix is tuning that controller's own concurrency flags (`--genWorkers`, `--backgroundScanWorkers` — covered in Section 030), not adding replicas. Extra replicas of a leader-elected controller only buy you resilience to a Pod or node failure.
-
-## The cleanup controller: a hybrid of both models
-
-The cleanup controller doesn't fit neatly into either bucket. Like the admission controller, it has a piece that needs leader election — certificate and webhook-configuration management, the same housekeeping job. But its actual cleanup-handling logic "supports both availability and scale for cleanup invocations," since individual scheduled deletions are dispatched as their own Kubernetes CronJobs rather than being processed serially by a single elected leader.
-
-The practical takeaway: don't assume every Kyverno controller behaves like the admission controller, and don't assume every controller behaves like the background controller either. Each one's scaling story has to be checked on its own terms.
-
-## Reference
-
-- Kyverno's high-availability documentation — the authoritative source for leader-election behavior per controller.
-- Kyverno's scaling/performance documentation — the source of the p99 latency and CPU figures cited above.
-- `kubectl explain lease` — the Kubernetes API shape behind leader election.
+> - **Treating `backgroundController.replicas` or `reportsController.replicas` as a speed knob.** Only the lease holder works. Extra replicas buy failover only.
+> - **Running one admission replica in production.** One restart or one node failure leaves the registry desk calling a webhook that does not answer.
+> - **Copying one controller's replica count to the others.** Each controller has its own model, so check what a replica buys before you pay for it.

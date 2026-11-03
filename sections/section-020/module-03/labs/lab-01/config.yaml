@@ -1,0 +1,36 @@
+# Policy Reports Lab (ats-008-lab-015). Graded against the live cluster.
+# Status: UNTESTED (written statically, not yet run against a cluster).
+metadata:
+  name: "ats-008-lab-015"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-kyverno"
+      description: "Installs Kyverno onto the kind cluster with Helm at default values"
+      type: "file"
+      source: "bootstrap/01-install-kyverno.sh"
+    - name: "lab-015-setup"
+      description: "Creates the namespaces, two Audit ClusterPolicies and four Deployments in shipyard"
+      type: "file"
+      source: "bootstrap/02-seed-violations.sh"
+
+validation:
+  scripts:
+    - name: "evidence-intact"
+      description: "The policies are still in Audit mode and the violating Deployments are unchanged"
+      type: "file"
+      source: "validation/validate-evidence.sh"
+      hint: "This lab is read-only. Do not change the policies or fix the Deployments. If you did, ask for a fresh lab."
+    - name: "failing-deployments"
+      description: "The ConfigMap report-answers names the failing Deployments and the number of failed results"
+      type: "file"
+      source: "validation/validate-deployments.sh"
+      hint: "Read the PolicyReports in shipyard. failing-deployments is a sorted, comma separated list of scope names with fail above zero. fail-count is the sum of summary.fail."
+    - name: "failing-namespace-and-mode"
+      description: "The ConfigMap report-answers names the failing Namespace and the failure action"
+      type: "file"
+      source: "validation/validate-namespace-mode.sh"
+      hint: "The Namespace result is in the ClusterPolicyReport. policy-mode is the failureAction of the rules of require-fleet-labels."

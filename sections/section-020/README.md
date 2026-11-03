@@ -1,48 +1,71 @@
 # Section 020: Kyverno Custom Resource Definitions (CRDs)
 
-Kyverno is not a sidecar binary bolted onto Kubernetes — it is a set of Custom Resource Definitions plus controllers that watch them. Every policy you write, every exemption you carve out, and every compliance result you read back is a first-class Kubernetes object, stored in etcd, visible to `kubectl get`, and governed by the same RBAC as anything else in the cluster.
-
-This section is where you stop treating that as a slogan and start treating it as a map. You will learn exactly which CRDs Kyverno registers, split into two families: the ones you author yourself (policies, exceptions, cleanup rules), and the ones Kyverno's own controllers generate on your behalf (reports). Knowing the difference is what lets you debug a policy that "isn't working" by reading the right object instead of guessing.
-
----
+Kyverno is a set of Custom Resource Definitions and controllers that watch them. Every policy you write, every waiver you sign and every report you read is a Kubernetes object. This section maps those objects, shows how to clean up with Kyverno, and teaches you to read the report cards it writes.
 
 ## What You Will Master
 
-By completing this section, you will acquire four core Kyverno CRD competencies:
-*   **The Policy-Authoring Family:** `ClusterPolicy`/`Policy`, `PolicyException`, `CleanupPolicy`/`ClusterCleanupPolicy`, and `GlobalContextEntry` — what each one is for, and which ones you write by hand.
-*   **PolicyException Enablement:** Why `PolicyException` is disabled by default, and the exact two admission-controller flags (`--enablePolicyException`, `--exceptionNamespace`) that turn it on and scope who is trusted to author one.
-*   **The Reporting Family:** `PolicyReport`/`ClusterPolicyReport` as the end-user-facing results you actually read, versus `AdmissionReport`/`BackgroundScanReport` and `UpdateRequest` as internal, ephemeral plumbing you rarely touch directly.
-*   **CRD Discovery:** Using `kubectl get crd | grep kyverno.io` and `kubectl api-resources | grep -i kyverno` to enumerate the full surface Kyverno installs, and `kubectl explain` to read live schema for the version actually running.
+- **The CRD map:** which kinds you author (`ClusterPolicy`, `Policy`, `PolicyException`, `CleanupPolicy`, `ClusterCleanupPolicy`, `GlobalContextEntry`) and which Kyverno generates (`PolicyReport`, `ClusterPolicyReport`, `EphemeralReport`, `ClusterEphemeralReport`, `UpdateRequest`).
+- **PolicyException:** why it is off by default and the two admission controller flags that switch it on.
+- **Cleanup policies:** `CleanupPolicy` and `ClusterCleanupPolicy`, the schedule, the `cleanup.kyverno.io/ttl` label and the permission the cleanup controller needs.
+- **Policy reports:** `Audit` and `Enforce`, `PolicyReport` and `ClusterPolicyReport`, reading counts and results with `kubectl`, and the intermediate reports and background scan behind them.
 
----
+## The Learning and Lab Path
 
-## The Learning & Lab Path
-
-This section is one module, paired with a dedicated graded lab on a kind Kubernetes cluster, followed by a Section Capstone Challenge:
+Module 1 runs Kyverno v1.13.2 from the release manifest. Modules 2 and 3 run the current Helm chart (chart 3.9.x, Kyverno v1.19.x).
 
 ### 1. Kyverno's CRD Surface
-*   **Module Reader:** **[Module 1: Kyverno's CRD Surface](./module-01/course.md)**
-    1. [Policy-Authoring CRDs](./module-01/course-01-policy-authoring-crds.md)
-    2. [Reporting & State CRDs](./module-01/course-02-reporting-and-state-crds.md)
-*   **Practice Lab Sandbox:** **`sections/section-020/module-01/labs/lab-01`**
-*   **Lab Run Command:**
-    ```bash
-    astrona run --git git@github.com:astrona-io/ATS008.git -c sections/section-020/module-01/labs/lab-01
-    ```
-*   **Hands-on Objective:** Enable `PolicyException` on a running admission controller, author one that exempts a specific Pod from an existing `ClusterPolicy`, and confirm it is admitted while an unexempted Pod is still blocked.
 
-### 2. Section Capstone Challenge
-*   **Comprehensive Challenge:** **`sections/section-020/capstone/labs/lab-01` (Kyverno CRDs Integration)**
-*   **Lab Run Command:**
-    ```bash
-    astrona run --git git@github.com:astrona-io/ATS008.git -c sections/section-020/capstone/labs/lab-01
-    ```
-*   **Hands-on Objective:** Author exceptions against two independent policies at once, proving each exemption is scoped correctly and every non-exempt resource is still enforced.
+- **Module reader:** [Kyverno's CRD Surface](./module-01/course.md)
+  1. [The Kyverno CRD Map](./module-01/course-01-the-kyverno-crd-map.md)
+  2. [Policy Exceptions](./module-01/course-02-policy-exceptions.md)
+  3. [Cleanup Policies and Global Context Entries](./module-01/course-03-cleanup-policies-and-global-context.md)
+  4. [Generated CRDs: Reports and Queues](./module-01/course-04-generated-crds-reports-and-queues.md)
+  5. [Summary](./module-01/course-05-summary.md)
+- **Playground:** `ats-008-playground-020-01`
+- **Lab:** `ats-008-lab-003` in `sections/section-020/module-01/labs/lab-01`
+  ```bash
+  astrona run --git ssh://git@github.com/astrona-io/ATS008.git -c sections/section-020/module-01/labs/lab-01
+  ```
+- **Hands-on objective:** switch on `PolicyException`, exempt one Pod and prove another Pod is still blocked.
 
----
+### 2. Cleaning Up Resources with CleanupPolicy and ClusterCleanupPolicy
+
+- **Module reader:** [Cleaning Up Resources](./module-02/course.md)
+  1. [Cleanup Policies: The Salvage Schedule](./module-02/course-01-cleanup-policies-the-salvage-schedule.md)
+  2. [The Time-to-Live Label](./module-02/course-02-the-time-to-live-label.md)
+  3. [Clearance for the Salvage Crew and Checking That It Ran](./module-02/course-03-clearance-for-the-salvage-crew-and-checking-it-ran.md)
+  4. [Summary](./module-02/course-04-summary.md)
+- **Playground:** `ats-008-playground-020-02`
+- **Lab:** `ats-008-lab-014` in `sections/section-020/module-02/labs/lab-01`
+  ```bash
+  astrona run --git ssh://git@github.com/astrona-io/ATS008.git -c sections/section-020/module-02/labs/lab-01
+  ```
+- **Hands-on objective:** give the cleanup controller permission to delete ConfigMaps and write a `CleanupPolicy` that removes labelled ConfigMaps every minute.
+
+### 3. Reading Policy Reports and Intermediate Reports
+
+- **Module reader:** [Reading Policy Reports and Intermediate Reports](./module-03/course.md)
+  1. [Audit and Enforce, and the Report Kinds](./module-03/course-01-audit-enforce-and-the-report-kinds.md)
+  2. [Reading Results with kubectl](./module-03/course-02-reading-results-with-kubectl.md)
+  3. [Background Scans and Intermediate Reports](./module-03/course-03-background-scans-and-intermediate-reports.md)
+  4. [Summary](./module-03/course-04-summary.md)
+- **Playground:** `ats-008-playground-020-03`
+- **Lab:** `ats-008-lab-015` in `sections/section-020/module-03/labs/lab-01`
+  ```bash
+  astrona run --git ssh://git@github.com/astrona-io/ATS008.git -c sections/section-020/module-03/labs/lab-01
+  ```
+- **Hands-on objective:** read the live reports and write the failing Deployments, the failed result count, the failing Namespace and the failure action to a ConfigMap.
+
+### 4. Section Capstone Challenge
+
+- **Challenge:** `ats-008-lab-004` in `sections/section-020/capstone/labs/lab-01` (Kyverno CRDs Integration)
+  ```bash
+  astrona run --git ssh://git@github.com/astrona-io/ATS008.git -c sections/section-020/capstone/labs/lab-01
+  ```
+- **Hands-on objective:** write exceptions against two independent policies and prove each one is scoped correctly.
 
 ## Ready for Assessment?
 
-Test your theoretical knowledge and diagnostic reasoning before tackling the practical lab missions:
+Test yourself with the [Section 020 knowledge check](./quiz.yaml). It has twelve questions across the three modules.
 
-*   **[Take the Section 020 Knowledge Check Quiz](./quiz.md)**
+All new labs in this section are untested: they were written without running them against a cluster.

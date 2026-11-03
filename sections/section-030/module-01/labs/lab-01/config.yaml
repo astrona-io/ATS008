@@ -13,7 +13,13 @@ bootstrap:
 
 validation:
   scripts:
-    - name: "verify-controller-extra-args"
-      description: "Confirms the background and reports controllers run with the configured extraArgs"
+    - name: "background-gen-workers"
+      description: "The background controller runs with --genWorkers=5"
       type: "file"
-      source: "validation/validate-completed.sh"
+      source: "validation/validate-background.sh"
+      hint: "Set backgroundController.extraArgs.genWorkers=5 with helm upgrade --reuse-values, wait for the rollout and read the Deployment args."
+    - name: "reports-scan-interval"
+      description: "The reports controller runs with --backgroundScanInterval=30m"
+      type: "file"
+      source: "validation/validate-reports.sh"
+      hint: "Set reportsController.extraArgs.backgroundScanInterval=30m. The reports path has no container level."

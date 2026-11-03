@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Status: UNTESTED (written statically, not yet run against a cluster).
+#
+# Upgrading a Running Kyverno Installation (PLAYGROUND) - a clean sandbox. The
+# `kyverno` Helm repository is added and Kyverno is installed with Helm at the
+# chart's default values (release `kyverno`, namespace `kyverno`, revision 1).
+# The environment then stays running for free exploration. No task, no
+# grading, no `astrona submit`.
+metadata:
+  name: ats-008-playground-060-01
+  docs:
+    guide: docs/overview.md
+
+bootstrap:
+  init:
+    - name: "prepare"
+      description: "Adds the kyverno Helm repository and installs Kyverno at default values (revision 1)"
+      type: "file"
+      source: "bootstrap/prepare.sh"

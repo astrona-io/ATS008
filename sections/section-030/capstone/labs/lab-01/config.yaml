@@ -13,7 +13,13 @@ bootstrap:
 
 validation:
   scripts:
-    - name: "verify-capstone-030"
-      description: "Confirms the admission and cleanup controllers run with their configured extraArgs"
+    - name: "admission-flags"
+      description: "The admission controller runs with --webhookTimeout=15, --enablePolicyException=true and --exceptionNamespace=capstone-030"
       type: "file"
-      source: "validation/validate-completed.sh"
+      source: "validation/validate-admission.sh"
+      hint: "The admission controller's map is admissionController.container.extraArgs. Use the flag names without dashes: webhookTimeout, enablePolicyException, exceptionNamespace."
+    - name: "cleanup-flags"
+      description: "The cleanup controller runs with --ttlReconciliationInterval=5m"
+      type: "file"
+      source: "validation/validate-cleanup.sh"
+      hint: "The cleanup controller's map is cleanupController.extraArgs, with no container level."

@@ -1,0 +1,53 @@
+# Remove Kyverno Cleanly (LAB). Graded against the live cluster.
+#
+# Status: UNTESTED (written statically, not yet run against a cluster).
+#
+# Starting state: Kyverno installed with Helm as release `kyverno` in namespace
+# `kyverno` (latest chart, default values) and the ClusterPolicy
+# `require-owner-label` (Enforce, Pods need an `owner` label). The learner
+# removes the release and every leftover. The graders look only at the end
+# state, so they are correct whichever objects Helm removes itself.
+metadata:
+  name: "ats-008-lab-013"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-kyverno"
+      description: "Adds the kyverno Helm repo and installs Kyverno with Helm as release kyverno in namespace kyverno"
+      type: "file"
+      source: "bootstrap/01-install-kyverno.sh"
+    - name: "seed-policy"
+      description: "Applies the require-owner-label ClusterPolicy"
+      type: "file"
+      source: "bootstrap/02-seed-policy.sh"
+
+validation:
+  scripts:
+    - name: "release-removed"
+      description: "No Helm release named kyverno exists in any namespace"
+      type: "file"
+      source: "validation/validate-release-removed.sh"
+      hint: "Remove the release with helm uninstall kyverno -n kyverno. Check with helm list -A --all."
+    - name: "webhooks-removed"
+      description: "No validating or mutating webhook configuration with kyverno in its name remains"
+      type: "file"
+      source: "validation/validate-webhooks-removed.sh"
+      hint: "List them with kubectl get validatingwebhookconfigurations,mutatingwebhookconfigurations and delete each one with kyverno in its name."
+    - name: "crds-removed"
+      description: "No custom resource definition whose name ends in kyverno.io remains"
+      type: "file"
+      source: "validation/validate-crds-removed.sh"
+      hint: "List them with kubectl get crd -o name and delete each one that ends in kyverno.io."
+    - name: "namespace-removed"
+      description: "The kyverno namespace no longer exists"
+      type: "file"
+      source: "validation/validate-namespace-removed.sh"
+      hint: "Delete it with kubectl delete namespace kyverno and wait until it is gone."
+    - name: "pod-creation-works"
+      description: "A Pod without an owner label can be created in the default namespace"
+      type: "file"
+      source: "validation/validate-pod-creation.sh"
+      hint: "A webhook configuration that is still left can refuse or delay requests. Run the checks again and remove what remains."

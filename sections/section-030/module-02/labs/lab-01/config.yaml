@@ -1,0 +1,40 @@
+# Status: UNTESTED (written statically, not yet run against a cluster).
+#
+# The Kyverno ConfigMap Lab. Graded against the live cluster. Starting state:
+# Kyverno installed with Helm at default values (release kyverno, namespace
+# kyverno) and an empty namespace named mission-ops.
+metadata:
+  name: "ats-008-lab-016"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-kyverno"
+      description: "Installs Kyverno onto the kind cluster via Helm at baseline values and creates the namespace mission-ops"
+      type: "file"
+      source: "bootstrap/01-install-kyverno.sh"
+
+validation:
+  scripts:
+    - name: "exclude-flight-bot"
+      description: "The Kyverno ConfigMap excludes the user flight-bot and still excludes system:nodes"
+      type: "file"
+      source: "validation/validate-exclude.sh"
+      hint: "Set config.excludeUsernames to a list with system:serviceaccount:mission-ops:flight-bot. Do not touch excludeGroups."
+    - name: "success-events"
+      description: "The Kyverno ConfigMap has generateSuccessEvents set to true"
+      type: "file"
+      source: "validation/validate-events.sh"
+      hint: "Set config.generateSuccessEvents to true in the Helm values."
+    - name: "resource-filters"
+      description: "The resource filters skip mission-ops and keep the default entries"
+      type: "file"
+      source: "validation/validate-filters.sh"
+      hint: "Use config.resourceFiltersIncludeNamespaces with mission-ops. Setting config.resourceFilters replaces the whole default list."
+    - name: "changes-made-with-helm"
+      description: "The Helm release holds the three settings and has more than one revision"
+      type: "file"
+      source: "validation/validate-helm-managed.sh"
+      hint: "Make every change with helm upgrade --reuse-values. A kubectl edit of the ConfigMap is not kept in the release."

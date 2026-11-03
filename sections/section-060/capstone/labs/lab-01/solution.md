@@ -21,7 +21,7 @@ Do this *before* touching the Helm release — it's your safety net if anything 
 helm upgrade kyverno kyverno/kyverno -n kyverno \
   --reuse-values \
   --set admissionController.replicas=3 \
-  --set backgroundController.extraArgs[0]=--genWorkers=15
+  --set backgroundController.extraArgs.genWorkers=15
 ```
 
 `--reuse-values` keeps everything from the baseline install; only the two flags above change.

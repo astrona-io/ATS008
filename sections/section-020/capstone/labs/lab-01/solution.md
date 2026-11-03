@@ -15,7 +15,7 @@ kubectl rollout status deployment/kyverno-admission-controller -n kyverno --time
 ## Step 2: Exempt Batch Pods from require-owner-label
 
 ```yaml
-apiVersion: policies.kyverno.io/v1
+apiVersion: kyverno.io/v2
 kind: PolicyException
 metadata:
   name: except-checkout-batch-jobs
@@ -45,7 +45,7 @@ kubectl apply -f except-checkout-batch-jobs.yaml
 ## Step 3: Exempt nightly-batch from require-cost-center-label
 
 ```yaml
-apiVersion: policies.kyverno.io/v1
+apiVersion: kyverno.io/v2
 kind: PolicyException
 metadata:
   name: except-checkout-nightly-batch

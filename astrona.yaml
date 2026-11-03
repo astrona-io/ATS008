@@ -1,3 +1,15 @@
+# Course manifest for ATS008 - Installation, Configuration, and Upgrades
+# (Kyverno Certified Associate).
+#
+# One entry per section under `modules:`. Each section lists, in order: its
+# README, then each module's landing page (course.md), its parts
+# (course-0N-*.md), and right after the part a lab tests, the lab's
+# question.md reading and the `type: lab` entry. The module's wrap-up page
+# comes next, then the section quiz. The section capstone closes the
+# section. Never list solution.md here.
+#
+# Every `path:` is relative to this file.
+
 training:
   id: ATS008
   title: "KCA: Installation, Configuration, and Upgrades"
@@ -14,12 +26,15 @@ training:
     weight: 18
 
 modules:
+
   - id: module-010
     title: "Section 010: Helm-based Installation and Configuration"
     description: >
       Install Kyverno the way most real clusters run it: adding the official
       Helm repo, running a values-driven helm install/upgrade into a
-      dedicated namespace, and auditing exactly what got deployed.
+      dedicated namespace, and auditing exactly what got deployed. Then
+      install from the release manifest, and remove Kyverno cleanly without
+      leaving webhooks, definitions or a namespace behind.
 
     content:
       - type: reading
@@ -29,52 +44,115 @@ modules:
       - type: reading
         title: "Module 1: Installing Kyverno with Helm"
         path: sections/section-010/module-01/course.md
-
       - type: reading
         title: "Module 1.1: Adding the Repo & a Baseline Install"
         path: sections/section-010/module-01/course-01-adding-the-repo-and-a-baseline-install.md
-
       - type: reading
         title: "Module 1.2: Customizing the Install: values.yaml & --set"
         path: sections/section-010/module-01/course-02-customizing-with-values-and-set.md
-
       - type: reading
         title: Question
         path: sections/section-010/module-01/labs/lab-01/question.md
-
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-010/module-01/labs/lab-01/solution.md
-
       - type: lab
         title: "Helm Install with Custom Values Lab"
         path: sections/section-010/module-01/labs/lab-01
-        difficulty: intermediate
+        difficulty: beginner
+        estimated_duration: 15m
+        topic: helm-install
+        task_kind: build
+        tags: [helm, helm-set, dedicated-namespace, admission-controller, replicas, resource-requests]
+        learning_goals:
+          - Install Kyverno with Helm as release kyverno in its own kyverno namespace
+          - Set the admission controller's replicas and resource requests with --set
+          - Check the live Deployment to prove the values landed
+        resources:
+          - name: "Kyverno installation methods"
+            url: https://kyverno.io/docs/installation/methods/
+          - name: "Kyverno chart values (README)"
+            url: https://github.com/kyverno/kyverno/blob/main/charts/kyverno/README.md
+          - name: "helm install"
+            url: https://helm.sh/docs/helm/helm_install/
 
       - type: reading
-        title: "Section 010 Knowledge Check: Helm-based Installation and Configuration"
-        path: sections/section-010/quiz.md
+        title: "Module 1.3: Re-running and Auditing the Install"
+        path: sections/section-010/module-01/course-03-re-running-and-auditing-the-install.md
+      - type: reading
+        title: "Module 1 Summary"
+        path: sections/section-010/module-01/course-04-summary.md
+
+      - type: reading
+        title: "Module 2: Installing from Manifests and Removing Kyverno Cleanly"
+        path: sections/section-010/module-02/course.md
+      - type: reading
+        title: "Module 2.1: Installing from the Release Manifest"
+        path: sections/section-010/module-02/course-01-installing-from-the-release-manifest.md
+      - type: reading
+        title: "Module 2.2: Uninstalling Kyverno and Cleaning Up"
+        path: sections/section-010/module-02/course-02-uninstalling-and-cleaning-up.md
+      - type: reading
+        title: Question
+        path: sections/section-010/module-02/labs/lab-01/question.md
+      - type: lab
+        title: "Remove Kyverno Cleanly Lab"
+        path: sections/section-010/module-02/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: helm-install
+        task_kind: build
+        tags: [helm, manifest-install, dedicated-namespace, crds-install, crds, clusterpolicy]
+        learning_goals:
+          - Uninstall the Kyverno Helm release and check what it leaves behind
+          - Remove leftover webhook configurations, custom resource definitions and the namespace in a safe order
+          - Prove the cluster is clean by creating an ordinary Pod
+        resources:
+          - name: "Kyverno installation methods"
+            url: https://kyverno.io/docs/installation/methods/
+          - name: "helm uninstall"
+            url: https://helm.sh/docs/helm/helm_uninstall/
+          - name: "Dynamic admission control"
+            url: https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/
+      - type: reading
+        title: "Module 2.3: Choosing Helm or the Manifest"
+        path: sections/section-010/module-02/course-03-choosing-helm-or-the-manifest.md
+      - type: reading
+        title: "Module 2 Summary"
+        path: sections/section-010/module-02/course-04-summary.md
 
       - type: reading
         title: Question
         path: sections/section-010/capstone/labs/lab-01/question.md
-
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-010/capstone/labs/lab-01/solution.md
-
       - type: lab
         title: "Helm-based Installation and Configuration Capstone Lab"
         path: sections/section-010/capstone/labs/lab-01
-        difficulty: advanced
+        difficulty: intermediate
+        estimated_duration: 25m
+        topic: helm-install
+        task_kind: build
+        tags: [helm, values-file, controller-toggle, exclude-groups, list-values, replicas]
+        learning_goals:
+          - Install Kyverno from a values file with helm upgrade --install
+          - Turn off the cleanup controller and set the admission controller's replicas
+          - Extend a list value without losing the entries you want to keep
+        resources:
+          - name: "Kyverno installation customization"
+            url: https://kyverno.io/docs/installation/customization/
+          - name: "Kyverno chart values (README)"
+            url: https://github.com/kyverno/kyverno/blob/main/charts/kyverno/README.md
+          - name: "helm upgrade"
+            url: https://helm.sh/docs/helm/helm_upgrade/
+
+      - type: quiz
+        title: "Section 010 Knowledge Check: Helm-based Installation and Configuration"
+        path: sections/section-010/quiz.yaml
+        pass_score: 70
 
   - id: module-020
     title: "Section 020: Kyverno Custom Resource Definitions (CRDs)"
     description: >
-      Go beyond ClusterPolicy and Policy to the full Kyverno CRD surface —
-      PolicyException, CleanupPolicy, GlobalContextEntry — and the reporting
-      hierarchy behind PolicyReport, from internal admission/background-scan
-      reports up to the aggregated, user-facing result.
+      Go beyond ClusterPolicy and Policy to the full Kyverno CRD surface,
+      clean up resources with cleanup policies and the time-to-live label,
+      and read the policy reports and intermediate reports that Kyverno
+      generates.
 
     content:
       - type: reading
@@ -84,52 +162,143 @@ modules:
       - type: reading
         title: "Module 1: Kyverno's CRD Surface"
         path: sections/section-020/module-01/course.md
-
       - type: reading
-        title: "Module 1.1: Policy-Authoring CRDs"
-        path: sections/section-020/module-01/course-01-policy-authoring-crds.md
-
+        title: "Module 1.1: The Kyverno CRD Map"
+        path: sections/section-020/module-01/course-01-the-kyverno-crd-map.md
       - type: reading
-        title: "Module 1.2: Reporting & State CRDs"
-        path: sections/section-020/module-01/course-02-reporting-and-state-crds.md
-
+        title: "Module 1.2: Policy Exceptions"
+        path: sections/section-020/module-01/course-02-policy-exceptions.md
       - type: reading
         title: Question
         path: sections/section-020/module-01/labs/lab-01/question.md
-
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-020/module-01/labs/lab-01/solution.md
-
       - type: lab
         title: "PolicyException CRD Lab"
         path: sections/section-020/module-01/labs/lab-01
         difficulty: intermediate
+        estimated_duration: 25m
+        topic: crds
+        task_kind: build
+        tags: [crds, policyexception, admission-controller, controller-flags, kubectl-patch, policy-reports]
+        learning_goals:
+          - Switch on PolicyException support on a running admission controller
+          - Write a PolicyException that exempts exactly one Pod from one rule
+          - Prove the exempt Pod is admitted while another Pod is still blocked
+        resources:
+          - name: "Kyverno policy exceptions"
+            url: https://kyverno.io/docs/exceptions/
+          - name: "Kyverno policy reports"
+            url: https://kyverno.io/docs/policy-reports/
+      - type: reading
+        title: "Module 1.3: Cleanup Policies and Global Context Entries"
+        path: sections/section-020/module-01/course-03-cleanup-policies-and-global-context.md
+      - type: reading
+        title: "Module 1.4: Generated CRDs: Reports and Queues"
+        path: sections/section-020/module-01/course-04-generated-crds-reports-and-queues.md
+      - type: reading
+        title: Summary
+        path: sections/section-020/module-01/course-05-summary.md
 
       - type: reading
-        title: "Section 020 Knowledge Check: Kyverno Custom Resource Definitions (CRDs)"
-        path: sections/section-020/quiz.md
+        title: "Module 2: Cleaning Up Resources with CleanupPolicy and ClusterCleanupPolicy"
+        path: sections/section-020/module-02/course.md
+      - type: reading
+        title: "Module 2.1: Cleanup Policies: The Salvage Schedule"
+        path: sections/section-020/module-02/course-01-cleanup-policies-the-salvage-schedule.md
+      - type: reading
+        title: "Module 2.2: The Time-to-Live Label"
+        path: sections/section-020/module-02/course-02-the-time-to-live-label.md
+      - type: reading
+        title: "Module 2.3: Clearance for the Salvage Crew and Checking That It Ran"
+        path: sections/section-020/module-02/course-03-clearance-for-the-salvage-crew-and-checking-it-ran.md
+      - type: reading
+        title: Question
+        path: sections/section-020/module-02/labs/lab-01/question.md
+      - type: lab
+        title: "Cleanup Policy Lab"
+        path: sections/section-020/module-02/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 25m
+        topic: crds
+        task_kind: build
+        tags: [crds, cleanup-policy, cleanup-controller, rbac, clusterrole-aggregation, auth-can-i]
+        learning_goals:
+          - Give the cleanup controller permission to delete ConfigMaps with an aggregated ClusterRole
+          - Write a CleanupPolicy that removes only labelled ConfigMaps in one namespace
+          - Prove with a live test that matching objects are deleted and other objects are kept
+        resources:
+          - name: "Kyverno cleanup policies"
+            url: https://kyverno.io/docs/policy-types/cleanup-policy/
+          - name: "Kyverno installation customization"
+            url: https://kyverno.io/docs/installation/customization/
+      - type: reading
+        title: Summary
+        path: sections/section-020/module-02/course-04-summary.md
+
+      - type: reading
+        title: "Module 3: Reading Policy Reports and Intermediate Reports"
+        path: sections/section-020/module-03/course.md
+      - type: reading
+        title: "Module 3.1: Audit and Enforce, and the Report Kinds"
+        path: sections/section-020/module-03/course-01-audit-enforce-and-the-report-kinds.md
+      - type: reading
+        title: "Module 3.2: Reading Results with kubectl"
+        path: sections/section-020/module-03/course-02-reading-results-with-kubectl.md
+      - type: reading
+        title: Question
+        path: sections/section-020/module-03/labs/lab-01/question.md
+      - type: lab
+        title: "Policy Reports Lab"
+        path: sections/section-020/module-03/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: crds
+        task_kind: troubleshooting
+        tags: [crds, policy-reports, clusterpolicy, reports-controller, jsonpath]
+        learning_goals:
+          - Read PolicyReports and a ClusterPolicyReport with kubectl and JSONPath
+          - Total the failed results and name the failing Deployments and Namespace
+          - Tell Audit from Enforce by reading the policy
+        resources:
+          - name: "Kyverno policy reports"
+            url: https://kyverno.io/docs/policy-reports/
+      - type: reading
+        title: "Module 3.3: Background Scans and Intermediate Reports"
+        path: sections/section-020/module-03/course-03-background-scans-and-intermediate-reports.md
+      - type: reading
+        title: Summary
+        path: sections/section-020/module-03/course-04-summary.md
 
       - type: reading
         title: Question
         path: sections/section-020/capstone/labs/lab-01/question.md
-
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-020/capstone/labs/lab-01/solution.md
-
       - type: lab
         title: "Kyverno CRDs Capstone Lab"
         path: sections/section-020/capstone/labs/lab-01
-        difficulty: advanced
+        difficulty: intermediate
+        estimated_duration: 30m
+        topic: crds
+        task_kind: build
+        tags: [crds, policyexception, clusterpolicy, admission-controller, kubectl-patch]
+        learning_goals:
+          - Write two PolicyExceptions against two different policies
+          - Exempt resources by name and by label selector
+          - Prove each exemption works and a control resource is still blocked
+        resources:
+          - name: "Kyverno policy exceptions"
+            url: https://kyverno.io/docs/exceptions/
+
+      - type: quiz
+        title: "Section 020 Knowledge Check: Kyverno Custom Resource Definitions (CRDs)"
+        path: sections/section-020/quiz.yaml
+        pass_score: 70
 
   - id: module-030
     title: "Section 030: Controller Configuration with Flags"
     description: >
-      Tune each of Kyverno's four independent controllers — admission,
-      background, cleanup, reports — through their own command-line flags,
-      and understand the difference between a live emergency patch and a
-      durable Helm extraArgs change.
+      Tune each of Kyverno's four independent controllers through their own
+      command-line flags, change the live ConfigMap the controllers watch,
+      and set the webhook behaviour and certificates, all through Helm values
+      that you can check on the running cluster.
 
     content:
       - type: reading
@@ -139,52 +308,144 @@ modules:
       - type: reading
         title: "Module 1: Tuning Kyverno Controllers with Flags"
         path: sections/section-030/module-01/course.md
-
       - type: reading
         title: "Module 1.1: The Four Controllers & Their Flags"
         path: sections/section-030/module-01/course-01-the-four-controllers-and-their-flags.md
-
       - type: reading
-        title: "Module 1.2: Setting Flags via Helm"
-        path: sections/section-030/module-01/course-02-setting-flags-via-helm.md
-
+        title: "Module 1.2: Setting Flags with Helm"
+        path: sections/section-030/module-01/course-02-setting-flags-with-helm.md
       - type: reading
         title: Question
         path: sections/section-030/module-01/labs/lab-01/question.md
-
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-030/module-01/labs/lab-01/solution.md
-
       - type: lab
         title: "Controller Flag Tuning Lab"
         path: sections/section-030/module-01/labs/lab-01
-        difficulty: intermediate
+        difficulty: beginner
+        estimated_duration: 15m
+        topic: controller-flags
+        task_kind: build
+        tags: [extra-args, controller-flags, background-controller, reports-controller, helm-upgrade, reuse-values, jsonpath]
+        learning_goals:
+          - Set a flag on the background controller and on the reports controller with helm upgrade
+          - Read each Deployment's live args to prove the flag reached the right controller
+        resources:
+          - name: "Kyverno installation customization"
+            url: https://kyverno.io/docs/installation/customization/
+          - name: "Kyverno chart values (README)"
+            url: https://github.com/kyverno/kyverno/blob/main/charts/kyverno/README.md
+      - type: reading
+        title: "Module 1 Summary"
+        path: sections/section-030/module-01/course-03-summary.md
 
       - type: reading
-        title: "Section 030 Knowledge Check: Controller Configuration with Flags"
-        path: sections/section-030/quiz.md
+        title: "Module 2: The Kyverno ConfigMap"
+        path: sections/section-030/module-02/course.md
+      - type: reading
+        title: "Module 2.1: Reading the Kyverno ConfigMap"
+        path: sections/section-030/module-02/course-01-reading-the-kyverno-configmap.md
+      - type: reading
+        title: "Module 2.2: Changing the ConfigMap with Helm"
+        path: sections/section-030/module-02/course-02-changing-the-configmap-with-helm.md
+      - type: reading
+        title: Question
+        path: sections/section-030/module-02/labs/lab-01/question.md
+      - type: lab
+        title: "The Kyverno ConfigMap Lab"
+        path: sections/section-030/module-02/labs/lab-01
+        difficulty: beginner
+        estimated_duration: 20m
+        topic: controller-flags
+        task_kind: build
+        tags: [configmap, exclude-groups, helm-upgrade, reuse-values, helm-get-values, jsonpath]
+        learning_goals:
+          - Exclude a user and turn on success events in the Kyverno ConfigMap through Helm values
+          - Add a namespace to the resource filters without losing the default entries
+          - Prove with the live ConfigMap and the Helm release that the change came from helm upgrade
+        resources:
+          - name: "Kyverno installation customization"
+            url: https://kyverno.io/docs/installation/customization/
+          - name: "Kyverno chart values (README)"
+            url: https://github.com/kyverno/kyverno/blob/main/charts/kyverno/README.md
+          - name: "helm upgrade"
+            url: https://helm.sh/docs/helm/helm_upgrade/
+      - type: reading
+        title: "Module 2 Summary"
+        path: sections/section-030/module-02/course-03-summary.md
+
+      - type: reading
+        title: "Module 3: Webhooks, Failure Policy and Certificates"
+        path: sections/section-030/module-03/course.md
+      - type: reading
+        title: "Module 3.1: Webhook Configurations and Failure Policy"
+        path: sections/section-030/module-03/course-01-webhook-configurations-and-failure-policy.md
+      - type: reading
+        title: "Module 3.2: Choosing Which Launches Use the Webhooks"
+        path: sections/section-030/module-03/course-02-choosing-which-launches-use-the-webhooks.md
+      - type: reading
+        title: "Module 3.3: Certificates for the Webhooks"
+        path: sections/section-030/module-03/course-03-certificates-for-the-webhooks.md
+      - type: reading
+        title: Question
+        path: sections/section-030/module-03/labs/lab-01/question.md
+      - type: lab
+        title: "Webhooks, Failure Policy and Certificates Lab"
+        path: sections/section-030/module-03/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 25m
+        topic: controller-flags
+        task_kind: build
+        tags: [webhooks, failure-policy, certificates, admission-controller, helm-upgrade, reuse-values, jsonpath]
+        learning_goals:
+          - Change the Kyverno webhook namespace selector without losing kube-system
+          - Make the Kyverno webhooks fail open and read the failure policy on the live configuration
+          - Replace the admission controller certificate and prove the serial number changed
+        resources:
+          - name: "Kyverno installation customization"
+            url: https://kyverno.io/docs/installation/customization/
+          - name: "Kubernetes dynamic admission control"
+            url: https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/
+          - name: "Kyverno chart values (README)"
+            url: https://github.com/kyverno/kyverno/blob/main/charts/kyverno/README.md
+      - type: reading
+        title: "Module 3 Summary"
+        path: sections/section-030/module-03/course-04-summary.md
 
       - type: reading
         title: Question
         path: sections/section-030/capstone/labs/lab-01/question.md
-
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-030/capstone/labs/lab-01/solution.md
-
       - type: lab
         title: "Controller Configuration with Flags Capstone Lab"
         path: sections/section-030/capstone/labs/lab-01
-        difficulty: advanced
+        difficulty: intermediate
+        estimated_duration: 25m
+        topic: controller-flags
+        task_kind: build
+        tags: [extra-args, controller-flags, admission-controller, cleanup-controller, values-file, helm-upgrade]
+        learning_goals:
+          - Write one values file that sets flags on two controllers with different nesting
+          - Apply it with a single helm upgrade and prove every flag landed
+        resources:
+          - name: "Kyverno installation customization"
+            url: https://kyverno.io/docs/installation/customization/
+          - name: "Kyverno chart values (README)"
+            url: https://github.com/kyverno/kyverno/blob/main/charts/kyverno/README.md
+          - name: "helm upgrade"
+            url: https://helm.sh/docs/helm/helm_upgrade/
+
+      - type: quiz
+        title: "Section 030 Knowledge Check: Controller Configuration with Flags"
+        path: sections/section-030/quiz.yaml
+        pass_score: 70
 
   - id: module-040
     title: "Section 040: Configuring Kyverno RBAC, Roles, and Permissions"
     description: >
-      Understand Kyverno's per-controller ServiceAccounts, the aggregated
-      ClusterRole pattern that assembles their permissions, the built-in
-      view role binding, and how to safely extend Kyverno's permissions
-      without editing its shipped default roles.
+      Understand Kyverno's per-controller service accounts, the aggregated
+      ClusterRole pattern that assembles their permissions, the built-in view
+      role binding, what the cleanup, reports and admission controllers may do
+      by default, how to extend their permissions safely with labelled
+      ClusterRoles or chart values, and how to prove a grant with kubectl
+      auth can-i.
 
     content:
       - type: reading
@@ -192,54 +453,105 @@ modules:
         path: sections/section-040/README.md
 
       - type: reading
-        title: "Module 1: Kyverno RBAC — Roles & Permissions"
+        title: "Module 1: Kyverno's RBAC Model"
         path: sections/section-040/module-01/course.md
-
       - type: reading
-        title: "Module 1.1: ServiceAccounts, Aggregated ClusterRoles & Built-in View Access"
+        title: "Module 1.1: ServiceAccounts, Aggregated ClusterRoles and the View Role"
         path: sections/section-040/module-01/course-01-serviceaccounts-and-aggregated-clusterroles.md
-
       - type: reading
         title: "Module 1.2: Granting Extra Permissions Safely"
         path: sections/section-040/module-01/course-02-granting-extra-permissions-safely.md
-
       - type: reading
         title: Question
         path: sections/section-040/module-01/labs/lab-01/question.md
-
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-040/module-01/labs/lab-01/solution.md
-
       - type: lab
         title: "ClusterRole Aggregation Lab"
         path: sections/section-040/module-01/labs/lab-01
         difficulty: intermediate
+        estimated_duration: 20m
+        topic: rbac
+        task_kind: troubleshooting
+        tags: [rbac, clusterrole-aggregation, background-controller, generate-rules, auth-can-i, update-request]
+        learning_goals:
+          - Find out why a generate rule does not create its ResourceQuota
+          - Grant the background controller the missing permission with a new aggregated ClusterRole
+          - Prove the next namespace gets its ResourceQuota
+        resources:
+          - name: "Kyverno customization: role-based access controls"
+            url: https://kyverno.io/docs/installation/customization/#role-based-access-controls
+          - name: "Kubernetes RBAC (aggregated ClusterRoles)"
+            url: https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+      - type: reading
+        title: Summary
+        path: sections/section-040/module-01/course-03-summary.md
 
       - type: reading
+        title: "Module 2: Permissions for the Cleanup, Reports and Admission Controllers"
+        path: sections/section-040/module-02/course.md
+      - type: reading
+        title: "Module 2.1: What Each Controller May Do by Default"
+        path: sections/section-040/module-02/course-01-what-each-controller-may-do-by-default.md
+      - type: reading
+        title: "Module 2.2: When a Controller Lacks a Permission"
+        path: sections/section-040/module-02/course-02-when-a-controller-lacks-a-permission.md
+      - type: reading
+        title: "Module 2.3: Chart Values for Permissions and Least Privilege"
+        path: sections/section-040/module-02/course-03-chart-values-for-permissions-and-least-privilege.md
+      - type: reading
+        title: Question
+        path: sections/section-040/module-02/labs/lab-01/question.md
+      - type: lab
+        title: "Cleanup Controller Permissions Lab"
+        path: sections/section-040/module-02/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: rbac
+        task_kind: troubleshooting
+        tags: [rbac, clusterrole-aggregation, cleanup-controller, cleanup-policy, auth-can-i]
+        learning_goals:
+          - Give the cleanup controller permission to delete ConfigMaps with a new aggregated ClusterRole
+          - Create a ClusterCleanupPolicy that removes expired ConfigMaps
+          - Prove the grant with kubectl auth can-i and the effect on live objects
+        resources:
+          - name: "Kyverno customization: role-based access controls"
+            url: https://kyverno.io/docs/installation/customization/#role-based-access-controls
+          - name: "Kyverno cleanup policies"
+            url: https://kyverno.io/docs/policy-types/cleanup-policy/
+      - type: reading
+        title: Summary
+        path: sections/section-040/module-02/course-04-summary.md
+
+      - type: quiz
         title: "Section 040 Knowledge Check: Configuring Kyverno RBAC, Roles, and Permissions"
-        path: sections/section-040/quiz.md
+        path: sections/section-040/quiz.yaml
+        pass_score: 70
 
       - type: reading
         title: Question
         path: sections/section-040/capstone/labs/lab-01/question.md
-
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-040/capstone/labs/lab-01/solution.md
-
       - type: lab
         title: "Kyverno RBAC Capstone Lab"
         path: sections/section-040/capstone/labs/lab-01
-        difficulty: advanced
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: rbac
+        task_kind: troubleshooting
+        tags: [rbac, clusterrole-aggregation, background-controller, generate-rules, auth-can-i]
+        learning_goals:
+          - Diagnose a generate rule that cannot create NetworkPolicies
+          - Fix it with a new aggregated ClusterRole for the networking.k8s.io group
+        resources:
+          - name: "Kyverno customization: role-based access controls"
+            url: https://kyverno.io/docs/installation/customization/#role-based-access-controls
+          - name: "Kubernetes RBAC (aggregated ClusterRoles)"
+            url: https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 
   - id: module-050
     title: "Section 050: High Availability Installations"
     description: >
       Learn why "more replicas" means something different for each Kyverno
-      controller — the admission controller's stateless horizontal scaling
-      versus the background and reports controllers' leader-election
-      failover model — and install the documented HA topology.
+      controller, then size, protect and spread a highly available install
+      with PodDisruptionBudgets, topology spread constraints and leases.
 
     content:
       - type: reading
@@ -247,54 +559,109 @@ modules:
         path: sections/section-050/README.md
 
       - type: reading
-        title: "Module 1: High Availability Installations"
+        title: "Module 1: Running Kyverno Highly Available"
         path: sections/section-050/module-01/course.md
-
       - type: reading
         title: "Module 1.1: Why Replicas Behave Differently Per Controller"
         path: sections/section-050/module-01/course-01-why-replicas-behave-differently.md
-
       - type: reading
         title: "Module 1.2: Installing for HA with Helm"
         path: sections/section-050/module-01/course-02-installing-for-ha-with-helm.md
-
       - type: reading
         title: Question
         path: sections/section-050/module-01/labs/lab-01/question.md
-
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-050/module-01/labs/lab-01/solution.md
-
       - type: lab
         title: "HA Replica Topology Lab"
         path: sections/section-050/module-01/labs/lab-01
-        difficulty: intermediate
+        difficulty: beginner
+        estimated_duration: 20m
+        topic: high-availability
+        task_kind: build
+        tags: [replicas, leader-election, leases, helm-set, admission-controller, rollout-status]
+        learning_goals:
+          - Install Kyverno with the documented high availability replica counts
+          - Find the current leader of the background controller in its Lease
+          - Prove the admission controller runs three Pods
+        resources:
+          - name: "Kyverno high availability"
+            url: https://kyverno.io/docs/high-availability/
+          - name: "Kubernetes leases"
+            url: https://kubernetes.io/docs/concepts/architecture/leases/
+      - type: reading
+        title: "Module 1: Summary"
+        path: sections/section-050/module-01/course-03-summary.md
 
       - type: reading
-        title: "Section 050 Knowledge Check: High Availability Installations"
-        path: sections/section-050/quiz.md
+        title: "Module 2: Sizing, Disruption Budgets and Spreading Replicas"
+        path: sections/section-050/module-02/course.md
+      - type: reading
+        title: "Module 2.1: Sizing Replicas and Resources"
+        path: sections/section-050/module-02/course-01-sizing-replicas-and-resources.md
+      - type: reading
+        title: "Module 2.2: Leases and What a Node Drain Does"
+        path: sections/section-050/module-02/course-02-leases-and-what-a-node-drain-does.md
+      - type: reading
+        title: "Module 2.3: Disruption Budgets and Spreading Replicas"
+        path: sections/section-050/module-02/course-03-disruption-budgets-and-spreading-replicas.md
+      - type: reading
+        title: Question
+        path: sections/section-050/module-02/labs/lab-01/question.md
+      - type: lab
+        title: "Sizing and Spreading Kyverno Lab"
+        path: sections/section-050/module-02/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 25m
+        topic: high-availability
+        task_kind: build
+        tags: [replicas, helm-set, values-file, admission-controller, background-controller, rollout-status]
+        learning_goals:
+          - Install Kyverno from a values file with a PodDisruptionBudget that allows one disruption
+          - Add a topology spread constraint and a priority class to the admission controller
+          - Prove the settings on the live Deployments and PodDisruptionBudgets
+        resources:
+          - name: "Kyverno scaling"
+            url: https://kyverno.io/docs/installation/scaling/
+          - name: "Kubernetes pod disruption budgets"
+            url: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+          - name: "Kubernetes pod topology spread constraints"
+            url: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+      - type: reading
+        title: "Module 2: Summary"
+        path: sections/section-050/module-02/course-04-summary.md
 
       - type: reading
         title: Question
         path: sections/section-050/capstone/labs/lab-01/question.md
-
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-050/capstone/labs/lab-01/solution.md
-
       - type: lab
         title: "High Availability Installations Capstone Lab"
         path: sections/section-050/capstone/labs/lab-01
-        difficulty: advanced
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: high-availability
+        task_kind: build
+        tags: [replicas, resource-requests, helm-set, admission-controller, rollout-status, jsonpath]
+        learning_goals:
+          - Install Kyverno for high availability and size the admission controller in one helm install
+          - Prove the replica counts and resource requests on the live Deployments
+        resources:
+          - name: "Kyverno high availability"
+            url: https://kyverno.io/docs/high-availability/
+          - name: "Kyverno scaling"
+            url: https://kyverno.io/docs/installation/scaling/
+
+      - type: quiz
+        title: "Section 050 Knowledge Check: High Availability Installations"
+        path: sections/section-050/quiz.yaml
+        pass_score: 70
 
   - id: module-060
     title: "Section 060: Upgrading Kyverno"
     description: >
       Upgrade Kyverno safely with Helm, understand why its CRDs are a
       deliberate exception to the usual "helm upgrade never touches CRDs"
-      rule, and build the release-notes and verification discipline a
-      production upgrade needs.
+      rule, recover from a bad upgrade with helm rollback, and build the
+      backup, release-notes and verification discipline a production
+      upgrade needs.
 
     content:
       - type: reading
@@ -302,55 +669,112 @@ modules:
         path: sections/section-060/README.md
 
       - type: reading
-        title: "Module 1: Upgrading Kyverno Safely"
+        title: "Module 1: Upgrading a Running Kyverno Installation"
         path: sections/section-060/module-01/course.md
-
       - type: reading
         title: "Module 1.1: The Helm Upgrade Path"
         path: sections/section-060/module-01/course-01-the-helm-upgrade-path.md
-
       - type: reading
-        title: "Module 1.2: Manifest Upgrades & Post-Upgrade Validation"
+        title: "Module 1.2: Manifest Upgrades and Post-Upgrade Validation"
         path: sections/section-060/module-01/course-02-manifest-upgrades-and-post-upgrade-validation.md
-
       - type: reading
         title: Question
         path: sections/section-060/module-01/labs/lab-01/question.md
-
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-060/module-01/labs/lab-01/solution.md
-
       - type: lab
         title: "Upgrading a Live Kyverno Release Lab"
         path: sections/section-060/module-01/labs/lab-01
-        difficulty: intermediate
+        difficulty: beginner
+        estimated_duration: 15m
+        topic: upgrades
+        task_kind: migration
+        tags: [upgrades, helm-upgrade, reuse-values, helm-history, post-upgrade-checks, rollout-status]
+        learning_goals:
+          - Upgrade a running Kyverno release in place with --reuse-values
+          - Prove a new revision was recorded and the cluster stayed healthy
+        resources:
+          - name: "Upgrading Kyverno"
+            url: https://kyverno.io/docs/installation/upgrading/
+          - name: "helm upgrade"
+            url: https://helm.sh/docs/helm/helm_upgrade/
+          - name: "helm history"
+            url: https://helm.sh/docs/helm/helm_history/
+      - type: reading
+        title: "Module 1 Summary"
+        path: sections/section-060/module-01/course-03-summary.md
 
       - type: reading
-        title: "Section 060 Knowledge Check: Upgrading Kyverno"
-        path: sections/section-060/quiz.md
+        title: "Module 2: Rolling Back and Recovering from a Bad Upgrade"
+        path: sections/section-060/module-02/course.md
+      - type: reading
+        title: "Module 2.1: Reading the History and Rolling Back"
+        path: sections/section-060/module-02/course-01-reading-the-history-and-rolling-back.md
+      - type: reading
+        title: Question
+        path: sections/section-060/module-02/labs/lab-01/question.md
+      - type: lab
+        title: "Rolling Back a Bad Kyverno Upgrade Lab"
+        path: sections/section-060/module-02/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: upgrades
+        task_kind: troubleshooting
+        tags: [upgrades, helm, helm-history, post-upgrade-checks, admission-controller, rollout-status]
+        learning_goals:
+          - Find the broken revision of a Kyverno release in the Helm history
+          - Roll the release back and prove the admission controller is healthy again
+          - Show that the history records the rollback and a running policy survived
+        resources:
+          - name: "Upgrading Kyverno"
+            url: https://kyverno.io/docs/installation/upgrading/
+          - name: "helm rollback"
+            url: https://helm.sh/docs/helm/helm_rollback/
+          - name: "helm history"
+            url: https://helm.sh/docs/helm/helm_history/
+      - type: reading
+        title: "Module 2.2: What a Rollback Keeps, and Backing Up Policies"
+        path: sections/section-060/module-02/course-02-what-a-rollback-keeps-and-backing-up-policies.md
+      - type: reading
+        title: "Module 2.3: Values, Version Skew and the Pre-Upgrade Checklist"
+        path: sections/section-060/module-02/course-03-values-version-skew-and-the-pre-upgrade-checklist.md
+      - type: reading
+        title: "Module 2 Summary"
+        path: sections/section-060/module-02/course-04-summary.md
 
       - type: reading
         title: Question
         path: sections/section-060/capstone/labs/lab-01/question.md
-
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-060/capstone/labs/lab-01/solution.md
-
       - type: lab
         title: "Upgrading Kyverno Capstone Lab"
         path: sections/section-060/capstone/labs/lab-01
-        difficulty: advanced
+        difficulty: intermediate
+        estimated_duration: 25m
+        topic: upgrades
+        task_kind: migration
+        tags: [upgrades, policy-backup, helm-upgrade, reuse-values, extra-args, post-upgrade-checks, helm-history]
+        learning_goals:
+          - Back up every ClusterPolicy before touching the release
+          - Upgrade replicas and a controller flag in one helm upgrade
+          - Prove the existing policy survived the upgrade unchanged
+        resources:
+          - name: "Upgrading Kyverno"
+            url: https://kyverno.io/docs/installation/upgrading/
+          - name: "helm upgrade"
+            url: https://helm.sh/docs/helm/helm_upgrade/
+
+      - type: quiz
+        title: "Section 060 Knowledge Check: Upgrading Kyverno"
+        path: sections/section-060/quiz.yaml
+        pass_score: 70
 
   - id: module-070
     title: "KCA Installation, Configuration, and Upgrades Certification Quiz"
     description: >
       A comprehensive, scenario-based final assessment covering all 6
-      modules across the 6 Installation, Configuration, and Upgrades
-      sections, simulating exam-style pressure.
+      sections of the Installation, Configuration, and Upgrades domain,
+      simulating exam-style pressure.
 
     content:
-      - type: reading
-        title: "Final Domain Certification Quiz"
-        path: sections/final-domain-quiz.md
+      - type: quiz
+        title: "Final Knowledge Check: Installation, Configuration, and Upgrades"
+        path: sections/final-domain-quiz.yaml
+        pass_score: 70

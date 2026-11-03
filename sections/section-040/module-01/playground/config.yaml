@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Kyverno's RBAC Model (PLAYGROUND) - playground environment.
+# Status: UNTESTED (written statically, not yet run against a cluster).
+#
+# A clean sandbox: it starts, installs Kyverno with Helm, applies the
+# ClusterPolicy generate-default-quota, then takes away the chart's default
+# permission for the background controller to create ResourceQuotas, so a
+# new namespace gets no quota until you grant the permission. No task, no
+# grading, no `astrona submit`.
+apiVersion: astrona.io/v1
+metadata:
+  name: ats-008-playground-040-01
+  docs:
+    guide: docs/overview.md
+
+runtime:
+  type: kind
+  kind:
+    image: kindest/node:v1.35.8
+
+bootstrap:
+  init:
+    - name: prepare
+      description: "Install Kyverno with Helm, apply generate-default-quota, then remove the chart's default create permissions of the background controller"
+      type: file
+      source: bootstrap/prepare.sh
+
+teardown:
+  keepCluster: false

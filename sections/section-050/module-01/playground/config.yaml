@@ -1,0 +1,17 @@
+# Running Kyverno Highly Available (PLAYGROUND) - a clean practice environment.
+# Status: UNTESTED (written statically, not yet run against a cluster).
+#
+# Starting state: a single-node kind cluster with the Kyverno Helm repository
+# added and Kyverno NOT installed. The learner installs it. No task, no
+# grading, no `astrona submit`.
+metadata:
+  name: ats-008-playground-050-01
+  docs:
+    guide: docs/overview.md
+
+bootstrap:
+  init:
+    - name: prepare
+      description: "Adds and updates the Kyverno Helm repository (Kyverno is not installed)"
+      type: file
+      source: bootstrap/prepare.sh

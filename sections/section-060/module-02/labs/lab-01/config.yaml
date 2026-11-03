@@ -1,0 +1,42 @@
+# Status: UNTESTED (written statically, not yet run against a cluster).
+#
+# Starting state: Kyverno installed with Helm at default values (revision 1),
+# the namespace `finance` and the ClusterPolicy `require-cost-center-label`,
+# then a broken revision 2: an upgrade with --reuse-values that points the
+# admission controller at an image tag that does not exist. The upgrade does
+# not use --wait, so Helm records revision 2 as deployed while the new
+# admission controller Pod cannot pull its image.
+metadata:
+  name: "ats-008-lab-020"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-kyverno"
+      description: "Adds the Kyverno Helm repository and installs Kyverno at default values (revision 1)"
+      type: "file"
+      source: "bootstrap/01-install-kyverno.sh"
+    - name: "seed-policy-and-break-upgrade"
+      description: "Creates the finance namespace and the require-cost-center-label policy, then applies a broken revision 2"
+      type: "file"
+      source: "bootstrap/02-break-upgrade.sh"
+
+validation:
+  scripts:
+    - name: "verify-rollback-recorded"
+      description: "The release history shows a rollback as the newest revision, deployed, and revision 2 superseded"
+      type: "file"
+      source: "validation/validate-history.sh"
+      hint: "Run helm history kyverno -n kyverno. A rollback adds a new revision at the end; it does not delete revision 2."
+    - name: "verify-admission-controller-healthy"
+      description: "The admission controller runs a real image, every controller is available and no pod has an image pull error"
+      type: "file"
+      source: "validation/validate-healthy.sh"
+      hint: "Check kubectl get pods -n kyverno and the image of the kyverno-admission-controller Deployment. Roll the release back with helm rollback."
+    - name: "verify-policy-enforced"
+      description: "The require-cost-center-label policy still exists and still blocks an unlabeled Pod in finance"
+      type: "file"
+      source: "validation/validate-policy.sh"
+      hint: "The policy is not part of the release, so a rollback does not remove it. Check it with kubectl get clusterpolicy."

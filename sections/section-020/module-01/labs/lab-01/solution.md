@@ -8,7 +8,7 @@ Follow these steps to enable, author, and prove out the exception:
 ```sh
 kubectl get crd | grep kyverno.io
 ```
-Expect `clusterpolicies.kyverno.io`, `policies.kyverno.io`, `policyexceptions.policies.kyverno.io`, the report CRDs, and the rest of Kyverno's registered CRDs.
+Expect `clusterpolicies.kyverno.io`, `policies.kyverno.io`, `policyexceptions.kyverno.io`, the report CRDs, and the rest of Kyverno's registered CRDs.
 
 ---
 
@@ -26,7 +26,7 @@ kubectl rollout status deployment/kyverno-admission-controller -n kyverno --time
 
 Create `except-checkout-smoke-test.yaml`:
 ```yaml
-apiVersion: policies.kyverno.io/v1
+apiVersion: kyverno.io/v2
 kind: PolicyException
 metadata:
   name: except-checkout-smoke-test

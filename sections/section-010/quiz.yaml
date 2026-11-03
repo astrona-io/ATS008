@@ -1,0 +1,373 @@
+# Knowledge check for section 010. Listed in astrona.yaml as a `type: quiz` entry after the capstone lab.
+schema_version: 1
+kind: question_bank
+id: ats008-010
+course_id: ATS008
+exam_code: KCA
+status: draft
+provenance: Original practice material written for this course; not official exam
+  questions.
+scope:
+  type: section
+  id: section-010
+  title: Helm-based Installation and Configuration
+questions:
+  - id: ats008-010-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: Explain why Kyverno needs a dedicated namespace and install
+      it into one
+    source_readings:
+    - sections/section-010/module-01/course-01-adding-the-repo-and-a-baseline-install.md
+    prompt: A team wants to save a namespace and asks to install Kyverno into `platform-tools`,
+      where a metrics agent and a log shipper already run. What do you advise?
+    options:
+    - id: a
+      text: Install it into `default` and rely on labels to separate it.
+      explanation: Labels do not give the separation that a namespace gives, and `default`
+        is shared by ordinary workloads.
+    - id: b
+      text: 'Go ahead: Kyverno only needs a namespace that exists, and sharing one is
+        common.'
+      explanation: Kyverno's documentation says it must not share its namespace with
+        other applications.
+    - id: c
+      text: Install it into `kyverno` with `--create-namespace`, and keep other workloads
+        out of that namespace.
+      explanation: Correct. A dedicated namespace keeps Kyverno's controllers, service
+        accounts and permissions easy to see and to lock down.
+    - id: d
+      text: Install it into `kube-system`, because system components belong there.
+      explanation: This breaks the dedicated-namespace rule and mixes Kyverno with other
+        system components.
+    correct_option: c
+    explanation: Kyverno must live alone in a dedicated namespace, by convention `kyverno`.
+      Its webhook sees writes across the whole cluster, so its machinery should be easy
+      to see and to lock down.
+
+  - id: ats008-010-q02
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: Name what crds.install controls and check the result
+    source_readings:
+    - sections/section-010/module-01/course-02-customizing-with-values-and-set.md
+    prompt: A platform team already applies Kyverno's custom resource definitions from
+      its own pipeline and wants Helm to leave them alone. Which value do they set,
+      and what must they accept?
+    options:
+    - id: a
+      text: "`crds.install=false`. They must make sure the definitions exist before
+        any policy is created, because Helm no longer installs or updates them."
+      explanation: Correct. With `false`, Helm skips the definitions chart, so another
+        tool must keep them present and up to date.
+    - id: b
+      text: "`crds.install=true`. Helm then only checks that the definitions exist."
+      explanation: "`true` is the default and makes Helm install and update the definitions."
+    - id: c
+      text: "`admissionController.enabled=false`. The definitions belong to the admission
+        controller."
+      explanation: The definitions are not tied to one controller, and this value does
+        not switch them.
+    - id: d
+      text: "`crds.install=false`. Policies keep working because Kyverno creates the
+        definitions itself at start."
+      explanation: Kyverno does not create them. Without the definitions, policies cannot
+        be created.
+    correct_option: a
+    explanation: "`crds.install` (default `true`) decides whether Helm installs and
+      updates Kyverno's custom resource definitions. Set it to `false` only when another
+      tool manages them."
+
+  - id: ats008-010-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: Place admissionController.container.resources correctly
+    source_readings:
+    - sections/section-010/module-01/course-02-customizing-with-values-and-set.md
+    prompt: You install with `--set admissionController.resources.requests.cpu=250m`.
+      The release says `deployed`, but the Deployment still shows the old CPU request,
+      and Helm gave no error. What is the cause?
+    options:
+    - id: a
+      text: Requests can only be set under `limits`.
+      explanation: Requests and limits are separate fields, and both can be set.
+    - id: b
+      text: The admission controller ignores CPU requests until it has two replicas.
+      explanation: The number of replicas does not change whether a request is applied.
+    - id: c
+      text: Helm needs `--force` to change resource requests.
+      explanation: "`--force` is not needed, and the install ran as expected."
+    - id: d
+      text: The key path is wrong. The chart reads `admissionController.container.resources`,
+        and Helm ignores a key it never reads.
+      explanation: Correct. The extra `container` level is easy to miss, and a wrong
+        path gives no error.
+    correct_option: d
+    explanation: Resources sit one level deeper than replicas, under `admissionController.container`.
+      Helm ignores a key that the chart never reads, so there is no error. Read the
+      live Deployment to prove a value landed.
+
+  - id: ats008-010-q04
+    type: single_choice
+    difficulty: beginner
+    learning_objective: Use helm upgrade --install in a script that runs more than once
+    source_readings:
+    - sections/section-010/module-01/course-03-re-running-and-auditing-the-install.md
+    prompt: A pipeline step runs `helm install kyverno kyverno/kyverno -n kyverno -f
+      values.yaml`. It works on the first run and fails on every later run. What is
+      the best fix?
+    options:
+    - id: a
+      text: Add `--create-namespace` to the command.
+      explanation: The namespace is not the problem. The release name is taken.
+    - id: b
+      text: Use `helm upgrade --install` with the same arguments.
+      explanation: Correct. It installs the release if it is missing and upgrades it
+        in place if it exists, so it can run again and again.
+    - id: c
+      text: Change the release name on every run.
+      explanation: This would install a new copy of Kyverno each time and fail on shared
+        cluster objects.
+    - id: d
+      text: Delete the release before each run.
+      explanation: This removes Kyverno on every run, which is risky and not needed.
+    correct_option: b
+    explanation: "`helm install` fails when the release exists. `helm upgrade --install`
+      works the first time and every time after, and each run adds a revision."
+
+  - id: ats008-010-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: Read back the full configuration with helm get values -a
+    source_readings:
+    - sections/section-010/module-01/course-03-re-running-and-auditing-the-install.md
+    prompt: You need to know the value of `admissionController.replicas` on a running
+      release that nobody documented. You never set it, so you expect the chart default.
+      Which command shows it?
+    options:
+    - id: a
+      text: "`helm list -n kyverno`"
+      explanation: This shows the release row, not its values.
+    - id: b
+      text: "`helm status kyverno -n kyverno`"
+      explanation: This shows the status and notes, not the full values.
+    - id: c
+      text: "`helm get values kyverno -n kyverno`"
+      explanation: Without `-a` you only see the values someone set, so a default is
+        missing.
+    - id: d
+      text: "`helm get values kyverno -n kyverno -a`"
+      explanation: Correct. The `-a` flag adds every value that is still at its chart
+        default.
+    correct_option: d
+    explanation: "`helm get values -a` shows the merged result of your overrides and
+      the chart defaults. Without `-a` you only see your own overrides."
+
+  - id: ats008-010-q06
+    type: single_choice
+    difficulty: advanced
+    learning_objective: Extend a list value without losing the entries you want to keep
+    source_readings:
+    - sections/section-010/module-01/course-03-re-running-and-auditing-the-install.md
+    prompt: The chart's `config.excludeGroups` default is `system:nodes`. You deploy
+      with `--set config.excludeGroups[0]=system:serviceaccounts:ci` and later find
+      that policies check requests from nodes. What happened, and what is the fix?
+    options:
+    - id: a
+      text: Helm replaced the whole list. Put every entry you want to keep, plus the
+        new one, in a values file.
+      explanation: Correct. Lists are replaced, not merged, so the default entry was
+        lost.
+    - id: b
+      text: The `--set` flag only works for the first install. Use `helm upgrade --reuse-values`.
+      explanation: "`--set` also works on upgrade, and `--reuse-values` does not merge
+        lists."
+    - id: c
+      text: The ConfigMap is rebuilt at random. Restart the admission controller.
+      explanation: The ConfigMap follows the values. A restart does not restore a lost
+        entry.
+    - id: d
+      text: Helm merged the list but sorted it, so `system:nodes` moved. Sort the list
+        again.
+      explanation: Helm does not merge lists.
+    correct_option: a
+    explanation: A new list replaces the old list completely. Copy the current entries
+      from `helm show values kyverno/kyverno`, then add the new one, and read the result
+      back from the ConfigMap.
+
+  - id: ats008-010-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: Install from the release manifest with kubectl create and a
+      pinned version
+    source_readings:
+    - sections/section-010/module-02/course-01-installing-from-the-release-manifest.md
+    prompt: Your team must install Kyverno on a locked-down cluster with `kubectl` only.
+      Which approach is correct?
+    options:
+    - id: a
+      text: "`kubectl apply -f` with the pinned file, because `apply` always works where
+        `create` does."
+      explanation: Plain `apply` stores a full copy in an annotation that is too small
+        for some Kyverno definitions.
+    - id: b
+      text: "`helm install` with the file as the chart."
+      explanation: The `install.yaml` file is a list of objects, not a chart.
+    - id: c
+      text: "`kubectl create -f` with the release `install.yaml` from a pinned version
+        address."
+      explanation: Correct. `create` stops on existing objects and the version in the
+        address makes installs repeatable.
+    - id: d
+      text: "`kubectl apply -f` with a plain `latest` address, so the cluster always
+        gets the newest file."
+      explanation: A moving address gives different installs on different days, and
+        plain `apply` can fail on large definitions.
+    correct_option: c
+    explanation: Pin the version in the address and use `kubectl create` for the first
+      install. `kubectl apply --server-side` is the other safe form.
+
+  - id: ats008-010-q08
+    type: single_choice
+    difficulty: advanced
+    learning_objective: Explain why plain kubectl apply can fail on the Kyverno manifest
+    source_readings:
+    - sections/section-010/module-02/course-01-installing-from-the-release-manifest.md
+    prompt: A colleague runs `kubectl apply -f install.yaml` and several custom resource
+      definitions fail with an error about an annotation that is too long. What does
+      the error mean?
+    options:
+    - id: a
+      text: The cluster has too little memory to store the definitions.
+      explanation: The error names an annotation, not memory.
+    - id: b
+      text: Plain `apply` stores a full copy of each object in the `last-applied-configuration`
+        annotation, and some definitions are larger than the annotation limit.
+      explanation: Correct. The limit is 262144 bytes, and some Kyverno definitions
+        are larger.
+    - id: c
+      text: The file was pinned to the wrong version.
+      explanation: The version does not change how `apply` stores its bookkeeping.
+    - id: d
+      text: Kyverno forbids `apply` for security reasons.
+      explanation: Kyverno does not stop `apply`. The failure comes from the annotation
+        size.
+    correct_option: b
+    explanation: Use `kubectl create`, or `kubectl apply --server-side`, which keeps
+      its records inside the API server and writes no such annotation.
+
+  - id: ats008-010-q09
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: Name what a manifest install does not give you
+    source_readings:
+    - sections/section-010/module-02/course-01-installing-from-the-release-manifest.md
+    prompt: Kyverno was installed from `install.yaml`. An engineer runs `helm upgrade
+      kyverno kyverno/kyverno -n kyverno` and gets an error that the release was not
+      found. Why?
+    options:
+    - id: a
+      text: A manifest install writes no Helm release, so Helm has nothing to upgrade.
+        It also has no values and no history.
+      explanation: Correct. To change a manifest install, apply a newer file or edit
+        the objects.
+    - id: b
+      text: The chart repository is not added.
+      explanation: Helm would complain about the chart, not about the release.
+    - id: c
+      text: The namespace is wrong. Releases only live in `default`.
+      explanation: Releases live in the namespace they were installed into.
+    - id: d
+      text: Helm needs an upgrade plugin for Kyverno.
+      explanation: No plugin is involved.
+    correct_option: a
+    explanation: The manifest gives every object but no release record. `helm list`,
+      `helm get values` and `helm rollback` have nothing to read.
+
+  - id: ats008-010-q10
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: List what can remain after helm uninstall and check for it
+    source_readings:
+    - sections/section-010/module-02/course-02-uninstalling-and-cleaning-up.md
+    prompt: "`helm uninstall kyverno -n kyverno` finished without an error. Which set
+      of checks proves the cluster is clean?"
+    options:
+    - id: a
+      text: Only the policies with `kubectl get clusterpolicy`.
+      explanation: Policies can be gone while webhooks and the namespace remain.
+    - id: b
+      text: "`helm list` only. If the release is gone, everything is gone."
+      explanation: The release record is only one part of what can remain.
+    - id: c
+      text: "`kubectl get pods -n kyverno` only. If no pod runs, Kyverno is gone."
+      explanation: This does not show webhook configurations or definitions.
+    - id: d
+      text: Releases with `helm list -A --all`, webhook configurations with `kyverno`
+        in the name, definitions ending in `kyverno.io`, and the `kyverno` namespace.
+      explanation: Correct. These are the places where leftovers can remain.
+    correct_option: d
+    explanation: Check the release, the webhook configurations, the custom resource
+      definitions and the namespace. Do not assume what Helm removed.
+
+  - id: ats008-010-q11
+    type: single_choice
+    difficulty: advanced
+    learning_objective: Remove leftovers in a safe order
+    source_readings:
+    - sections/section-010/module-02/course-02-uninstalling-and-cleaning-up.md
+    prompt: After a removal you find a webhook configuration for Kyverno, several definitions
+      and the `kyverno` namespace. In which order do you delete them, and why?
+    options:
+    - id: a
+      text: Definitions, then namespace, then webhooks, to remove the biggest objects
+        first.
+      explanation: Webhooks should go first, so the API server stops calling a service
+        that is gone.
+    - id: b
+      text: Webhook configurations, then definitions (after a backup of the policies),
+        then the namespace.
+      explanation: Correct. The call line goes first. Deleting a definition deletes
+        its custom resources, so back them up before.
+    - id: c
+      text: Any order works, because Kubernetes sorts it out.
+      explanation: The order matters, because a leftover webhook can refuse or delay
+        ordinary requests.
+    - id: d
+      text: Namespace, then definitions, then webhooks. The namespace holds everything.
+      explanation: The webhook configuration is not inside the namespace, so it would
+        stay and call a service that is gone.
+    correct_option: b
+    explanation: Delete the webhook configurations first, then the definitions, then
+      the namespace. Save the policies before you delete a definition.
+
+  - id: ats008-010-q12
+    type: single_choice
+    difficulty: beginner
+    learning_objective: Tell which install method a cluster uses and choose between
+      Helm and the manifest
+    source_readings:
+    - sections/section-010/module-02/course-03-choosing-helm-or-the-manifest.md
+    prompt: 'You inherit a cluster. `helm list -n kyverno` lists nothing, and the Kyverno
+      Deployments have no `app.kubernetes.io/managed-by: Helm` label. How was Kyverno
+      most likely installed, and how do you remove it later?'
+    options:
+    - id: a
+      text: Kyverno cannot be installed in any other way, so the cluster is broken.
+      explanation: The manifest is a supported method.
+    - id: b
+      text: With Helm. Remove it with `helm uninstall`.
+      explanation: No release exists, so `helm uninstall` has nothing to remove.
+    - id: c
+      text: From the release manifest. Remove it with `kubectl delete -f` on the same
+        file, and then check for leftover webhook configurations.
+      explanation: Correct. The file holds no webhook configurations and no cleanup
+        jobs, so the leftover checks matter.
+    - id: d
+      text: With a Helm chart from another repository. Remove it with `helm rollback`.
+      explanation: "`rollback` returns to an earlier revision and does not remove a
+        release."
+    correct_option: c
+    explanation: No release and no Helm label point to a manifest install. Never mix
+      the two methods on one install.
+

@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Status: UNTESTED (written statically, not yet run against a cluster).
+#
+# Rolling Back and Recovering from a Bad Upgrade (PLAYGROUND) - a clean
+# sandbox. Kyverno is installed with Helm at default values (revision 1), the
+# namespace `finance` and the ClusterPolicy `require-cost-center-label` are
+# created, then a broken revision 2 is applied: the admission controller image
+# tag does not exist and the upgrade did not use --wait. The environment then
+# stays running for free exploration. No task, no grading, no `astrona submit`.
+metadata:
+  name: ats-008-playground-060-02
+  docs:
+    guide: docs/overview.md
+
+bootstrap:
+  init:
+    - name: "prepare"
+      description: "Installs Kyverno (revision 1), seeds a policy, then applies a broken revision 2"
+      type: "file"
+      source: "bootstrap/prepare.sh"

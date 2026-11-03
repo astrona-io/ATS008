@@ -1,42 +1,55 @@
 # Kyverno's CRD Surface
 
-Install Kyverno and it does not add a single opaque binary to your cluster — it registers a family of Custom Resource Definitions and then runs controllers that watch them. That single design decision, first introduced in Section 010, has a direct consequence you have not yet had to reckon with: Kyverno's entire behavior is spread across *multiple* CRD kinds, not one. Some of them you author by hand. Others Kyverno generates on your behalf and expects you to only ever read.
+Kyverno does not add one opaque program to your cluster. It teaches mission control's registry desk a set of new kinds of form, called custom resource definitions (CRDs), and then runs crews that watch those forms. Some forms you fill in yourself. Others Kyverno fills in for you and expects you only to read.
 
-Confusing the two is the single most common source of "why isn't my policy doing anything" debugging sessions. This module draws the map so you never have to guess again.
+Mixing the two up is a common reason for the question "why is my policy not doing anything?". This module draws the star chart: which forms exist, which ones you write, which ones Kyverno writes, and how to see them on a live cluster. It ends with one hands-on mission: a signed waiver for one ship.
 
 ```mermaid
-flowchart LR
-    subgraph Authoring["You author these"]
+flowchart TB
+    subgraph Authoring["You write these"]
         CP["ClusterPolicy / Policy"]
         PE["PolicyException"]
-        CU["CleanupPolicy /\nClusterCleanupPolicy"]
+        CU["CleanupPolicy / ClusterCleanupPolicy"]
         GC["GlobalContextEntry"]
     end
-    subgraph Reporting["Kyverno generates these"]
-        AR["AdmissionReport /\nBackgroundScanReport\n(internal, ephemeral)"]
-        PR["PolicyReport /\nClusterPolicyReport\n(what you read)"]
-        UR["UpdateRequest\n(internal queue)"]
+    subgraph Generated["Kyverno writes these"]
+        ER["EphemeralReport / ClusterEphemeralReport"]
+        PR["PolicyReport / ClusterPolicyReport"]
+        UR["UpdateRequest"]
     end
-    Authoring -->|"admission + background scans"| AR
-    AR -->|"reports-controller aggregates"| PR
+    Authoring -->|"checks and scans"| ER
+    ER -->|"reports controller merges"| PR
 ```
+
+The diagram shows the two families. Everything on the left is input from you. Everything on the right is output from Kyverno's crews.
 
 ## How this module is organised
 
-1. **[Part 1 — Policy-Authoring CRDs](./course-01-policy-authoring-crds.md)** — `ClusterPolicy`/`Policy` recapped, then `PolicyException`, `CleanupPolicy`/`ClusterCleanupPolicy`, and `GlobalContextEntry` in full.
-2. **[Part 2 — Reporting & State CRDs](./course-02-reporting-and-state-crds.md)** — `PolicyReport`/`ClusterPolicyReport` as the results you read, `AdmissionReport`/`BackgroundScanReport`/`UpdateRequest` as the internal plumbing that produces them.
+- **The Kyverno CRD map** shows how to list every form Kyverno registered, read its versions and read its fields with `kubectl`.
+- **Policy exceptions** covers the `PolicyException` waiver, why it is switched off by default, and the two admission controller flags that turn it on. This part ends with the mission `PolicyException CRD Lab`.
+- **Cleanup policies and global context entries** looks at the other forms you write: salvage schedules and shared star charts.
+- **Generated CRDs: reports and queues** looks at the forms Kyverno writes: report cards, scratch notes and the construction crew's work orders.
+- **Summary** recaps all four parts and lists the mission.
 
 ## Learning objectives
 
 After this module you can:
 
-- List the CRDs Kyverno registers and classify each as policy-authoring or reporting/state.
-- Explain what a `PolicyException` does, why it is disabled by default, and which two admission-controller flags enable and scope it.
-- Describe `CleanupPolicy`/`ClusterCleanupPolicy`'s `match`/`conditions`/`schedule` shape and that it is deprecated in favor of `DeletingPolicy` as of v1.19.
-- Explain what a `GlobalContextEntry` caches and why that avoids redundant per-policy API calls.
-- Distinguish `PolicyReport`/`ClusterPolicyReport` (end-user facing) from `AdmissionReport`/`BackgroundScanReport` (internal, ephemeral).
-- Use `kubectl get crd | grep kyverno.io` and `kubectl api-resources | grep -i kyverno` to enumerate the full CRD surface on a live cluster.
+- List the CRDs Kyverno registers and sort each one into "you write it" or "Kyverno writes it".
+- Read the versions and the fields of a Kyverno CRD on a running cluster.
+- Explain what a `PolicyException` does, why it is off by default, and which two admission controller flags switch it on and limit where it can be written.
+- Write a `PolicyException` that exempts one Pod from one rule and prove that other Pods are still checked.
+- Describe the shape of a `ClusterCleanupPolicy` and what a `GlobalContextEntry` caches.
+- Tell a `PolicyReport` from the intermediate reports and the `UpdateRequest` queue.
 
 ## Before you start
 
-The linked lab gives you a kind Kubernetes cluster with Kyverno v1.13.2 already installed by its bootstrap script, plus one pre-applied sample `ClusterPolicy` — see the lab's `README.md` for exactly what is seeded. You should already be comfortable with `ClusterPolicy`/`Policy` rule anatomy and `match`/`exclude` (Section 010 of ATS007, *Fundamentals of Kyverno*, if you need a refresher).
+You should know what a `ClusterPolicy` is: a rule book with `match` and `validate` parts. You also need `kubectl` and a terminal. You do not need any other knowledge of Kyverno internals.
+
+## Where you practise
+
+Your playground is a training solar system on your laptop: a `kind` cluster with **Kyverno v1.13.2**, installed from the release `install.yaml` file (the "parts list" method, with no Helm release). The version is pinned on purpose, so the forms, the API versions and the flags in this module match what you see.
+
+The playground has a planet (namespace) called `checkout` and one rule book, the `ClusterPolicy` named `require-owner-label`. It is set to `Enforce`, so any Pod without a non-empty `owner` label is turned away at the gate. Nothing else is set up. Launch it now and keep it open next to the reading:
+
+<!-- astrona:playground -->

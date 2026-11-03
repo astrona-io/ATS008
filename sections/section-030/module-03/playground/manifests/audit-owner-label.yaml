@@ -1,0 +1,20 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: audit-owner-label
+spec:
+  background: true
+  rules:
+    - name: check-owner-label
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        failureAction: Audit
+        message: "Pods should carry an owner label."
+        pattern:
+          metadata:
+            labels:
+              owner: "?*"

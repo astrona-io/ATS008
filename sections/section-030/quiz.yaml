@@ -1,0 +1,338 @@
+# Knowledge check for section 030. Listed in astrona.yaml as a `type: quiz` entry after the capstone lab.
+---
+schema_version: 1
+kind: question_bank
+id: ats008-030
+course_id: ATS008
+exam_code: KCA
+status: draft
+provenance: Original practice material written for this course; not official exam
+  questions.
+scope:
+  type: section
+  id: section-030
+  title: Controller Configuration with Flags
+questions:
+- id: ats008-030-q01
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Match a symptom to the controller that owns the flag
+  source_readings:
+  - sections/section-030/module-01/course-01-the-four-controllers-and-their-flags.md
+  prompt: Scans of existing Pods file their `PolicyReport` objects too slowly, and
+    the team wants the scans to run more often. Which Deployment and flag do they
+    change?
+  options:
+  - id: a
+    text: "`kyverno-background-controller` and `--genWorkers`"
+    explanation: "`--genWorkers` sets how many generate jobs run at once. It does
+      not set the scan schedule."
+  - id: b
+    text: "`kyverno-admission-controller` and `--webhookTimeout`"
+    explanation: That flag sets how long the API server waits for an answer. It has
+      nothing to do with scans.
+  - id: c
+    text: "`kyverno-cleanup-controller` and `--ttlReconciliationInterval`"
+    explanation: That flag sets how often expired objects are looked for, not how
+      existing Pods are scanned.
+  - id: d
+    text: "`kyverno-reports-controller` and `--backgroundScanInterval`"
+    explanation: Correct. The reports controller scans existing objects, and this
+      flag sets how often it does.
+  correct_option: d
+  explanation: The reports controller owns the scan schedule through `--backgroundScanInterval`.
+    Work out which crew owns a problem before you change a flag.
+- id: ats008-030-q02
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Read the live flags of a controller from its Deployment
+  source_readings:
+  - sections/section-030/module-01/course-01-the-four-controllers-and-their-flags.md
+  prompt: A colleague says the background controller runs with `--genWorkers=5`, but
+    you want proof. What is the most reliable check?
+  options:
+  - id: a
+    text: Read the `args` of the Deployment `kyverno-background-controller` with `kubectl
+      get deploy ... -o jsonpath`.
+    explanation: Correct. The Pod template holds the exact flags the program starts
+      with.
+  - id: b
+    text: Read the Helm chart's `values.yaml` on your laptop.
+    explanation: The file shows the chart defaults, not what is running in the cluster.
+  - id: c
+    text: Read the ConfigMap `kyverno` in the `kyverno` namespace.
+    explanation: The ConfigMap holds settings, not container flags.
+  - id: d
+    text: Run `helm list` and check that the status is `deployed`.
+    explanation: "`deployed` only means Helm finished. It does not show which flags
+      are live."
+  correct_option: a
+  explanation: The Deployment's Pod template is the truth about the flags a crew starts
+    with.
+- id: ats008-030-q03
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Use the right extraArgs path for the admission controller
+  source_readings:
+  - sections/section-030/module-01/course-02-setting-flags-with-helm.md
+  prompt: 'A values file sets `admissionController.extraArgs.webhookTimeout: 15`.
+    After `helm upgrade`, the admission controller args do not hold the flag. Which
+    change fixes it?'
+  options:
+  - id: a
+    text: Add `--force` to `helm upgrade`.
+    explanation: The value is in a path that no template reads. `--force` does not
+      change that.
+  - id: b
+    text: Move the value to `admissionController.container.extraArgs.webhookTimeout`.
+    explanation: Correct. The admission controller keeps its flags under `container`.
+      The other three crews use `extraArgs` directly.
+  - id: c
+    text: Write the flag as a list item with the dashes, `--webhookTimeout=15`.
+    explanation: The chart reads a map of flag names to values.
+  - id: d
+    text: Set `config.webhookTimeout`.
+    explanation: That key is not part of the ConfigMap values, and a flag is not set
+      there.
+  correct_option: b
+  explanation: 'The nesting differs: `admissionController.container.extraArgs` for
+    the admission controller, and `<controller>.extraArgs` for the other three.'
+- id: ats008-030-q04
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Keep earlier values when upgrading
+  source_readings:
+  - sections/section-030/module-01/course-02-setting-flags-with-helm.md
+  prompt: An engineer ran `helm upgrade -n kyverno kyverno kyverno/kyverno --set cleanupController.extraArgs.ttlReconciliationInterval=5m`.
+    The flag `--genWorkers=5` set earlier is gone. Why?
+  options:
+  - id: a
+    text: Helm removes flags that belong to a different crew.
+    explanation: Helm does not know which crew owns a flag. It uses the values you
+      give.
+  - id: b
+    text: The command had no `--reuse-values`, so every value that was not repeated
+      went back to the chart default.
+    explanation: Correct. `--reuse-values` keeps the values from the earlier release,
+      and without it they are lost.
+  - id: c
+    text: Two flags on two crews cannot exist together.
+    explanation: Each crew has its own flags, so both can exist together.
+  - id: d
+    text: A flag stays only until the next Pod restart.
+    explanation: A flag set through Helm is part of the release and survives restarts.
+  correct_option: b
+  explanation: Use `helm upgrade --reuse-values` to keep earlier values, and check
+    the live `args` afterwards.
+- id: ats008-030-q05
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Name where the Kyverno ConfigMap comes from
+  source_readings:
+  - sections/section-030/module-02/course-01-reading-the-kyverno-configmap.md
+  prompt: A team lead asks where the settings of the ConfigMap `kyverno` come from.
+    What is the correct answer?
+  options:
+  - id: a
+    text: From the `config` block of the Helm values, which the chart turns into the
+      ConfigMap.
+    explanation: Correct. Each `config` value becomes a key, and an empty value leaves
+      no key.
+  - id: b
+    text: From the flags of the admission controller, which copies them into the ConfigMap.
+    explanation: The flags live on the Deployments. The controllers read the ConfigMap,
+      they do not write it.
+  - id: c
+    text: From the policies in the cluster, which Kyverno merges into one ConfigMap.
+    explanation: Policies are separate objects. They do not feed this ConfigMap.
+  - id: d
+    text: From the Kubernetes API server's own settings.
+    explanation: The API server has no knowledge of this ConfigMap.
+  correct_option: a
+  explanation: The chart builds the ConfigMap from `config` values, and the controllers
+    find it through `INIT_CONFIG`.
+- id: ats008-030-q06
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Tell a ConfigMap change from a flag change
+  source_readings:
+  - sections/section-030/module-02/course-01-reading-the-kyverno-configmap.md
+  - sections/section-030/module-02/course-02-changing-the-configmap-with-helm.md
+  prompt: You change `config.generateSuccessEvents` with `helm upgrade --reuse-values`.
+    What do you expect to see afterwards?
+  options:
+  - id: a
+    text: The four controller Deployments roll out new Pods.
+    explanation: Only a flag change on a crew replaces its Pods.
+  - id: b
+    text: The ConfigMap has the new value, and the Pods keep their names and ages.
+    explanation: Correct. The ConfigMap is read live, so nothing restarts.
+  - id: c
+    text: The change waits until the next `helm upgrade` without `--reuse-values`.
+    explanation: The ConfigMap is updated by the upgrade you just ran.
+  - id: d
+    text: Only the admission controller picks up the change after a restart.
+    explanation: Every controller watches the ConfigMap, and none needs a restart.
+  correct_option: b
+  explanation: The notice board is read live. A ConfigMap change needs no restart,
+    and a flag change does.
+- id: ats008-030-q07
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Add to the resource filters without losing the defaults
+  source_readings:
+  - sections/section-030/module-02/course-02-changing-the-configmap-with-helm.md
+  prompt: You need Kyverno to skip the namespace `mission-ops`. Which values change
+    does it without losing the default filters?
+  options:
+  - id: a
+    text: Set `config.resourceFilters` to a list with `[*/*,mission-ops,*]`.
+    explanation: This replaces the whole default list of more than a hundred entries.
+  - id: b
+    text: Set `config.excludeGroups` to `mission-ops`.
+    explanation: That list is for groups of senders, not namespaces, and it replaces
+      `system:nodes`.
+  - id: c
+    text: Set `config.resourceFiltersExcludeNamespaces` to `mission-ops`.
+    explanation: That helper removes a filter. It does not add one.
+  - id: d
+    text: Set `config.resourceFiltersIncludeNamespaces` to a list with `mission-ops`.
+    explanation: Correct. The chart adds `[*/*,mission-ops,*]` to the defaults.
+  correct_option: d
+  explanation: The four helper lists add to or remove from the defaults. `resourceFiltersIncludeNamespaces`
+    adds a namespace to the skip list.
+- id: ats008-030-q08
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain who a ConfigMap exclusion applies to
+  source_readings:
+  - sections/section-030/module-02/course-02-changing-the-configmap-with-helm.md
+  prompt: "`config.excludeUsernames` holds `system:serviceaccount:mission-ops:flight-bot`.
+    What does that change?"
+  options:
+  - id: a
+    text: Requests sent by that service account are not checked against the policies.
+    explanation: Correct. The exclude lists skip the sender of the request.
+  - id: b
+    text: Every Pod in `mission-ops` is skipped.
+    explanation: Skipping by namespace is the job of the resource filters. The exclude
+      lists skip the sender.
+  - id: c
+    text: The service account loses its permission to create Pods.
+    explanation: Exclusion does not change RBAC permissions.
+  - id: d
+    text: Kyverno writes an event for every request of that account.
+    explanation: Events for passing rules come from `generateSuccessEvents`.
+  correct_option: a
+  explanation: The exclude lists skip the sender, and the resource filters skip the
+    target.
+- id: ats008-030-q09
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Explain Fail and Ignore
+  source_readings:
+  - sections/section-030/module-03/course-01-webhook-configurations-and-failure-policy.md
+  prompt: 'The admission controller is down, and a Kyverno policy has `failurePolicy:
+    Fail`. A user applies a Pod that the policy matches. What happens?'
+  options:
+  - id: a
+    text: The Pod is created, and the policy is checked later.
+    explanation: That is the behaviour of `Ignore`, and nothing checks it later.
+  - id: b
+    text: Kubernetes retries the call until Kyverno is back, and the user waits.
+    explanation: The API server calls once, waits for the timeout and then applies
+      the failure policy.
+  - id: c
+    text: The API server refuses the Pod, because nobody answered the webhook.
+    explanation: Correct. `Fail` means that a missing answer refuses the request.
+  - id: d
+    text: The Pod is created, because Kyverno never blocks its own namespace.
+    explanation: That rule keeps the `kyverno` namespace out of the doors. It does
+      not apply to other namespaces.
+  correct_option: c
+  explanation: "`Fail` refuses a launch when nobody answers, and `Ignore` lets it
+    through."
+- id: ats008-030-q10
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Use forceFailurePolicyIgnore and read the result
+  source_readings:
+  - sections/section-030/module-03/course-01-webhook-configurations-and-failure-policy.md
+  prompt: A team wants every Kyverno webhook to fail open during an upgrade, whatever
+    the policies say. Which setting and which check do they use?
+  options:
+  - id: a
+    text: "`features.forceFailurePolicyIgnore.enabled=true`, then read `failurePolicy`
+      on the live webhook configurations."
+    explanation: Correct. Kyverno writes `Ignore` into every door, and you can read
+      it with `kubectl get validatingwebhookconfiguration`.
+  - id: b
+    text: "`config.excludeGroups`, then read the ConfigMap."
+    explanation: The exclude lists skip senders. They do not change the failure policy.
+  - id: c
+    text: Edit each webhook configuration with `kubectl edit`.
+    explanation: Kyverno writes the configurations again, so the edit is lost.
+  - id: d
+    text: Set `webhookTimeout` to `0`.
+    explanation: The timeout is the wait time. It does not change what happens on
+      failure.
+  correct_option: a
+  explanation: The feature makes every door `Ignore`, and the live configuration shows
+    it. Turn it off again when the work is done.
+- id: ats008-030-q11
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Change the webhook selector without losing kube-system
+  source_readings:
+  - sections/section-030/module-03/course-02-choosing-which-launches-use-the-webhooks.md
+  prompt: A values file sets `config.webhooks.namespaceSelector` with `NotIn` and
+    the single value `mission-ops`. What is true after the upgrade?
+  options:
+  - id: a
+    text: Both `kube-system` and `mission-ops` are skipped, because the lists are
+      merged.
+    explanation: The chart does not merge. The list you set replaces the default.
+  - id: b
+    text: Only `mission-ops` is skipped. `kube-system` goes through the doors again.
+    explanation: Correct. A list you set replaces the default list, so write `kube-system`
+      as well.
+  - id: c
+    text: The `kyverno` namespace goes through the doors, because the default is gone.
+    explanation: The chart adds the `kyverno` exclusion by itself while `excludeKyvernoNamespace`
+      is `true`.
+  - id: d
+    text: Nothing changes until the admission controller Pod is restarted.
+    explanation: The ConfigMap is read live, and the live door follows a few seconds
+      later.
+  correct_option: b
+  explanation: The selector list replaces the default. Write every namespace you want
+    skipped.
+- id: ats008-030-q12
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Replace a webhook certificate safely
+  source_readings:
+  - sections/section-030/module-03/course-03-certificates-for-the-webhooks.md
+  prompt: The admission controller certificate must be replaced, and Kyverno manages
+    it in the default mode. What is the safe way, and how do you prove it worked?
+  options:
+  - id: a
+    text: Delete the secret `kyverno-svc.kyverno.svc.kyverno-tls-ca`, then check the
+      Pods.
+    explanation: The CA secret signs the badge. Deleting it makes Kyverno rewrite
+      the doors, and they may fail for a while.
+  - id: b
+    text: Delete the secret `kyverno-svc.kyverno.svc.kyverno-tls-pair`, then compare
+      the certificate serial number before and after.
+    explanation: Correct. Kyverno issues a new certificate, the CA stays the same,
+      and the serial number changes.
+  - id: c
+    text: Set `admissionController.createSelfSignedCert=true` and expect automatic
+      renewals.
+    explanation: That mode is not renewed by anyone.
+  - id: d
+    text: Edit the `tls.crt` key of the secret by hand.
+    explanation: A hand-made value needs a matching key and a signature from the CA.
+  correct_option: b
+  explanation: Delete only the `tls-pair` secret, and read the serial number with
+    `openssl x509 -noout -serial` before and after.

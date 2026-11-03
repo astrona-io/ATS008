@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Kyverno's CRD Surface (PLAYGROUND). A clean sandbox with no task and no
+# grading. It starts with Kyverno v1.13.2 from install.yaml, the namespace
+# checkout and the ClusterPolicy require-owner-label, then stays running.
+#
+# Status: UNTESTED (written statically, not yet run against a cluster).
+metadata:
+  name: "ats-008-playground-020-01"
+  docs:
+    guide: docs/overview.md
+
+bootstrap:
+  init:
+    - name: "prepare"
+      description: "Installs Kyverno v1.13.2 from install.yaml, creates the checkout namespace and the require-owner-label ClusterPolicy"
+      type: "file"
+      source: "bootstrap/prepare.sh"

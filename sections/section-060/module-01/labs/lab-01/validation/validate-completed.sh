@@ -21,7 +21,7 @@ if ! kubectl get crd clusterpolicies.kyverno.io >/dev/null 2>&1; then
   exit 1
 fi
 
-not_running=$(kubectl get pods -n kyverno --no-headers 2>/dev/null | grep -vc "Running" || true)
+not_running=$(kubectl get pods -n kyverno --no-headers 2>/dev/null | grep -Ev "Completed|Succeeded" | grep -vc "Running" || true)
 if [[ "$not_running" -gt 0 ]]; then
   echo "FAIL: $not_running pod(s) in the kyverno namespace are not Running"
   exit 1

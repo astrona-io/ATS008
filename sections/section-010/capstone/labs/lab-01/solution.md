@@ -49,7 +49,7 @@ Expect `2`.
 ```sh
 kubectl get deploy kyverno-cleanup-controller -n kyverno
 ```
-Expect either "not found" or a Deployment with `0` replicas, depending on how the chart implements the toggle.
+Expect "not found": with the toggle off, the chart does not create the Deployment at all.
 
 ---
 

@@ -1,9 +1,15 @@
-# Kyverno RBAC Capstone Challenge
+---
+estimated_duration: 20m
+---
 
-Welcome to the Section 040 Capstone. In this lab, you will diagnose and fix a `generate` rule that fails to create `NetworkPolicy` resources for lack of RBAC on the background controller's ServiceAccount, reinforcing the aggregated-ClusterRole pattern across a different resource kind.
+# Kyverno RBAC Capstone Lab
 
-## Launching the Lab
-Run the following command in your terminal to boot the kind Kubernetes cluster:
-```bash
-astrona run --git git@github.com:astrona-io/ATS008.git -c sections/section-040/capstone/labs/lab-01
+Section 040 capstone. Kyverno is installed by Helm with the `ClusterPolicy` `generate-network-policy`, and the chart's default permission for the background controller to create `NetworkPolicy` objects is removed. You fix a `generate` rule that cannot build `NetworkPolicy` objects with a new, labelled ClusterRole. The task is in `question.md`; the walkthrough is in `solution.md`.
+
+## Run it
+
+```sh
+astrona run --git ssh://git@github.com/astrona-io/ATS008.git -c sections/section-040/capstone/labs/lab-01
+astrona submit --git ssh://git@github.com/astrona-io/ATS008.git -c sections/section-040/capstone/labs/lab-01
+astrona destroy ats-008-lab-008
 ```

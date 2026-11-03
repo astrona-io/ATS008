@@ -1,0 +1,332 @@
+# Knowledge check for section 050. Listed in astrona.yaml as a `type: quiz` entry after the capstone lab.
+---
+schema_version: 1
+kind: question_bank
+id: ats008-050
+course_id: ATS008
+exam_code: KCA
+status: draft
+provenance: Original practice material written for this course; not official exam
+  questions.
+scope:
+  type: section
+  id: section-050
+  title: High Availability Installations
+questions:
+- id: ats008-050-q01
+  type: single_choice
+  difficulty: beginner
+  learning_objective: State the minimum replica count for a highly available admission
+    controller
+  source_readings:
+  - sections/section-050/module-01/course-01-why-replicas-behave-differently.md
+  prompt: A team runs one admission controller replica. During a rolling restart,
+    every `kubectl apply` in the cluster hangs until the Pod is back. What change
+    fixes the cause?
+  options:
+  - id: a
+    text: Run two background controller replicas.
+    explanation: The background controller is not in the path of launch requests,
+      so this does not help.
+  - id: b
+    text: Run at least three admission controller replicas, because every replica
+      answers AdmissionReview requests.
+    explanation: Correct. The admission controller shares the request load between
+      all ready replicas, and three is the documented minimum for a highly available
+      one.
+  - id: c
+    text: Run one admission replica and add leader election.
+    explanation: The admission controller does not use leader election for webhook
+      requests, and one replica is still one point of failure.
+  - id: d
+    text: Run five reports controller replicas.
+    explanation: The reports controller does not answer admission requests.
+  correct_option: b
+  explanation: Every admission replica answers requests at the same time, so more
+    replicas give both capacity and availability.
+- id: ats008-050-q02
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Explain what extra replicas buy the background, reports and
+    cleanup controllers
+  source_readings:
+  - sections/section-050/module-01/course-01-why-replicas-behave-differently.md
+  prompt: Background scans feel slow. A colleague sets `backgroundController.replicas=5`
+    to make them five times faster. What happens?
+  options:
+  - id: a
+    text: The scans run five times faster, because five Pods share the work.
+    explanation: Only the lease holder does the work, so there is no speed gain.
+  - id: b
+    text: The work is split into five equal parts.
+    explanation: Kyverno does not split the background job between replicas.
+  - id: c
+    text: Helm rejects the value.
+    explanation: Helm accepts any non-zero replica count.
+  - id: d
+    text: One replica holds the lease and works. The other four stand by, so the change
+      adds only faster failover.
+    explanation: Correct. Leader election means one working replica. Extra replicas
+      add failover, not speed.
+  correct_option: d
+  explanation: Background controller replicas add availability, not throughput.
+- id: ats008-050-q03
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain what extra replicas buy the background, reports and
+    cleanup controllers
+  source_readings:
+  - sections/section-050/module-01/course-01-why-replicas-behave-differently.md
+  prompt: Which statement about the cleanup controller is correct?
+  options:
+  - id: a
+    text: 'It mixes both models: certificate and webhook management use leader election,
+      but the cleanup handler does not.'
+    explanation: Correct. That is why extra cleanup replicas can serve both availability
+      and scale for cleanup.
+  - id: b
+    text: 'It works exactly like the background controller: one lease holder does
+      everything.'
+    explanation: Only part of its work is leader-elected.
+  - id: c
+    text: It never uses leader election, like the admission controller's request handling.
+    explanation: It uses leader election for certificate and webhook management.
+  - id: d
+    text: It cannot run more than one replica.
+    explanation: Kyverno supports multiple replicas for each controller.
+  correct_option: a
+  explanation: The cleanup controller is a mix of the two models.
+- id: ats008-050-q04
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Inspect leader-election state on a live cluster using Lease
+    objects
+  source_readings:
+  - sections/section-050/module-01/course-02-installing-for-ha-with-helm.md
+  prompt: Kyverno runs two background Pods. You must know which one is doing the work
+    right now. What do you check?
+  options:
+  - id: a
+    text: "`kubectl get deploy -n kyverno` and pick the Pod with the lowest age."
+    explanation: A Deployment listing does not say who holds leadership.
+  - id: b
+    text: The Pod with the most restarts.
+    explanation: Restarts do not show leadership.
+  - id: c
+    text: The `holderIdentity` of the background controller's Lease in the `kyverno`
+      namespace.
+    explanation: Correct. The holder writes its Pod name into the lease, and standbys
+      only watch it.
+  - id: d
+    text: The `replicas` value in the Helm release.
+    explanation: It tells you how many Pods exist, not which one leads.
+  correct_option: c
+  explanation: The Lease's holderIdentity names the Pod that holds leadership.
+- id: ats008-050-q05
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Say what the chart sets by default for spreading replicas
+  source_readings:
+  - sections/section-050/module-01/course-02-installing-for-ha-with-helm.md
+  prompt: A colleague says the Kyverno chart sets nothing to keep replicas apart,
+    so replicas can share a node. What is the accurate description?
+  options:
+  - id: a
+    text: The chart sets a hard anti-affinity and topology spread constraints.
+    explanation: It sets neither of these by default.
+  - id: b
+    text: The chart sets a soft `podAntiAffinity` on `kubernetes.io/hostname` for
+      each controller, and leaves `topologySpreadConstraints` empty.
+    explanation: Correct. The anti-affinity is only a preference, so the scheduler
+      may still place two replicas on one node.
+  - id: c
+    text: The chart sets nothing at all.
+    explanation: It does set a soft anti-affinity.
+  - id: d
+    text: The chart sets topology spread constraints only for the admission controller.
+    explanation: The list is empty for every controller.
+  correct_option: b
+  explanation: A soft anti-affinity exists by default, and topology spread constraints
+    are empty.
+- id: ats008-050-q06
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Say what a one-node cluster can and cannot prove about spreading
+  source_readings:
+  - sections/section-050/module-01/course-02-installing-for-ha-with-helm.md
+  prompt: On a one-node training cluster, `kubectl get pods -n kyverno -o wide` shows
+    all three admission Pods on the same node. What does that show?
+  options:
+  - id: a
+    text: Expected on one node. The anti-affinity is only a preference, and this cluster
+      cannot prove spreading.
+    explanation: Correct. With one dock, every Pod lands there. Check the `NODE` column
+      on a multi-node cluster.
+  - id: b
+    text: The chart is broken, because it must forbid sharing a node.
+    explanation: The default anti-affinity is soft, and there is only one node.
+  - id: c
+    text: Leader election has failed.
+    explanation: Leader election does not decide where the admission Pods run.
+  - id: d
+    text: The replicas are not Ready.
+    explanation: Placement says nothing about readiness.
+  correct_option: a
+  explanation: One node cannot show spreading.
+- id: ats008-050-q07
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Name the values that set resources for each controller
+  source_readings:
+  - sections/section-050/module-02/course-01-sizing-replicas-and-resources.md
+  prompt: Where do you set the CPU and memory requests of the container that answers
+    admission calls?
+  options:
+  - id: a
+    text: "`admissionController.resources`"
+    explanation: The chart does not use this key for the admission container.
+  - id: b
+    text: "`admissionController.initContainer.resources`"
+    explanation: This sizes the start-up container, not the one that answers calls.
+  - id: c
+    text: "`admissionController.container.resources`"
+    explanation: Correct. The admission resources sit under `container`, unlike the
+      other controllers.
+  - id: d
+    text: "`global.resources`"
+    explanation: The chart has no such key for these containers.
+  correct_option: c
+  explanation: Admission resources are under admissionController.container.resources.
+- id: ats008-050-q08
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Choose sizing changes that follow Kyverno's scaling guidance
+  source_readings:
+  - sections/section-050/module-02/course-01-sizing-replicas-and-resources.md
+  prompt: A cluster has many policies and the admission Pods are killed for running
+    out of memory. Which action follows Kyverno's guidance?
+  options:
+  - id: a
+    text: Add a CPU limit equal to the CPU request.
+    explanation: Kyverno recommends not setting CPU limits.
+  - id: b
+    text: Add background controller replicas to share the policy set.
+    explanation: Replicas do not split the policy set, and background replicas do
+      not serve admission calls.
+  - id: c
+    text: Double the admission replicas and keep the memory the same.
+    explanation: Each replica holds every policy, so each one still needs enough memory.
+  - id: d
+    text: Size the admission memory for the number of policies, add replicas for throughput
+      and availability, and measure real use.
+    explanation: Correct. Memory follows the policy count, and each replica holds
+      the full policy set.
+  correct_option: d
+  explanation: Memory follows the number of policies, and replicas add throughput
+    and availability.
+- id: ats008-050-q09
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Say what happens to a lease when its holder is evicted
+  source_readings:
+  - sections/section-050/module-02/course-02-leases-and-what-a-node-drain-does.md
+  prompt: An engineer deletes the Pod that holds the background controller's lease
+    with `kubectl delete pod` and says the PodDisruptionBudget allowed it. What is
+    wrong with the conclusion?
+  options:
+  - id: a
+    text: A budget only applies to Pods with a lease.
+    explanation: Budgets apply to the Pods their selector matches.
+  - id: b
+    text: A plain delete ignores PodDisruptionBudgets. Only evictions, such as a node
+      drain, respect them.
+    explanation: Correct. The delete says nothing about whether the budget would have
+      allowed the eviction.
+  - id: c
+    text: Deleting a lease holder is always blocked by Kubernetes.
+    explanation: Nothing blocks the delete.
+  - id: d
+    text: 'The budget was `minAvailable: 0`.'
+    explanation: The scenario gives no such value, and the delete would ignore it
+      anyway.
+  correct_option: b
+  explanation: Delete bypasses budgets, and eviction respects them.
+- id: ats008-050-q10
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Say why you cannot set both minAvailable and maxUnavailable
+  source_readings:
+  - sections/section-050/module-02/course-03-disruption-budgets-and-spreading-replicas.md
+  prompt: 'A values file sets `admissionController.replicas: 3` and `podDisruptionBudget.maxUnavailable:
+    1`. `helm install` stops with `Cannot set both .minAvailable and .maxUnavailable`.
+    Why, and what is the fix?'
+  options:
+  - id: a
+    text: 'The default `minAvailable: 1` is still set. Add `minAvailable: null` to
+      the file.'
+    explanation: Correct. The chart's default stays unless you clear it, and a budget
+      may use only one of the two.
+  - id: b
+    text: "`maxUnavailable` must be a percentage. Use `33%`."
+    explanation: A number is allowed.
+  - id: c
+    text: Budgets need three controllers to be enabled first.
+    explanation: Each controller has its own budget.
+  - id: d
+    text: 'The budget needs `enabled: true`, and the error disappears.'
+    explanation: With three replicas the budget is created anyway, and the error is
+      about two keys.
+  correct_option: a
+  explanation: Clear the default minAvailable with null when you use maxUnavailable.
+- id: ats008-050-q11
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Add topologySpreadConstraints and say how they differ from the
+    default anti-affinity
+  source_readings:
+  - sections/section-050/module-02/course-03-disruption-budgets-and-spreading-replicas.md
+  prompt: You must make the scheduler refuse to put more than one extra admission
+    Pod on any node, on a real multi-node cluster. Which setting does that?
+  options:
+  - id: a
+    text: Leave the defaults. The soft anti-affinity already forbids it.
+    explanation: The default is only a preference.
+  - id: b
+    text: 'A `topologySpreadConstraints` entry with `maxSkew: 0`.'
+    explanation: "`maxSkew` must be greater than zero."
+  - id: c
+    text: 'A constraint with `maxSkew: 1`, `topologyKey: kubernetes.io/hostname`,
+      `DoNotSchedule` and a `labelSelector` for the label `app: kyverno`.'
+    explanation: The selector does not match the component label of the admission
+      Pods, so it spreads nothing.
+  - id: d
+    text: 'A constraint with `maxSkew: 1`, `topologyKey: kubernetes.io/hostname`,
+      `whenUnsatisfiable: DoNotSchedule` and a `labelSelector` for `app.kubernetes.io/component:
+      admission-controller`.'
+    explanation: Correct. `DoNotSchedule` makes it a hard rule, and the selector matches
+      the admission Pods.
+  correct_option: d
+  explanation: Use a hard constraint with a selector that matches the Pods.
+- id: ats008-050-q12
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Say what happens to a lease when its holder is evicted
+  source_readings:
+  - sections/section-050/module-02/course-02-leases-and-what-a-node-drain-does.md
+  prompt: You delete the Pod that holds a background lease and read the lease at once.
+    It still shows the old holder. What do you do?
+  options:
+  - id: a
+    text: Assume leader election is broken and reinstall Kyverno.
+    explanation: The lease simply has not run out yet.
+  - id: b
+    text: Delete the lease object by hand.
+    explanation: This is not needed and can confuse the election.
+  - id: c
+    text: Wait and read it again. A standby takes the lease after it runs out.
+    explanation: Correct. For a short time the old name can remain.
+  - id: d
+    text: Scale the admission controller.
+    explanation: The admission controller's replicas do not hold this lease.
+  correct_option: c
+  explanation: The standby takes the baton after the old lease runs out.

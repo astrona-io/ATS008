@@ -1,0 +1,881 @@
+# Final domain knowledge check across all six sections.
+schema_version: 1
+kind: question_bank
+id: ats008-final
+course_id: ATS008
+exam_code: KCA
+status: draft
+provenance: Original practice material written for this course; not official exam
+  questions.
+scope:
+  type: domain
+  id: installation-configuration-and-upgrades
+  title: Installation, Configuration, and Upgrades
+questions:
+- id: ats008-final-q01
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Install Kyverno with Helm into its own namespace and check three
+    layers
+  source_readings:
+  - sections/section-010/module-01/course-01-adding-the-repo-and-a-baseline-install.md
+  prompt: A new engineer ran `helm install kyverno kyverno/kyverno -n kyverno --create-namespace`
+    and `helm list` says `deployed`. Which extra checks show the install really works?
+  options:
+  - id: a
+    text: Only `kubectl get ns`, which shows whether the namespace exists.
+    explanation: The namespace can exist while pods or definitions are missing.
+  - id: b
+    text: Nothing more is needed, because `deployed` means every pod runs.
+    explanation: "`deployed` means Helm finished. A pod can still fail to start."
+  - id: c
+    text: "`kubectl get pods -n kyverno` for the four controllers and `kubectl get
+      crd | grep kyverno.io` for the custom resource definitions."
+    explanation: Correct. Check the pods, the definitions and the release.
+  - id: d
+    text: Only `helm repo list`, which shows whether the repository is added.
+    explanation: The repository list says nothing about the install.
+  correct_option: c
+  explanation: 'Check three layers after an install: the pods, the custom resource
+    definitions and the Helm release.'
+- id: ats008-final-q02
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Set the replicas and the container resources of the admission
+    controller
+  source_readings:
+  - sections/section-010/module-01/course-02-customizing-with-values-and-set.md
+  prompt: Which values file gives the admission controller three replicas and a memory
+    request of `256Mi`?
+  options:
+  - id: a
+    text: "`admissionController:` with `replicas: 3`, and `container.resources.requests.memory:
+      256Mi` under it"
+    explanation: Correct. `replicas` sits under the controller and `resources` sits
+      under `admissionController.container`.
+  - id: b
+    text: "`replicas: 3` and `resources.requests.memory: 256Mi` at the top of the
+      file"
+    explanation: Top-level keys belong to no controller, so the chart does not read
+      them for this one.
+  - id: c
+    text: "`admissionController.limits.memory: 256Mi`"
+    explanation: This is neither a request nor a path that the chart reads.
+  - id: d
+    text: "`admissionController:` with `replicas: 3` and `resources.requests.memory:
+      256Mi` directly under it"
+    explanation: The resources key is one level deeper, so Helm would ignore it without
+      an error.
+  correct_option: a
+  explanation: Replicas sit directly under `admissionController`. Resources sit under
+    `admissionController.container`. Read the live Deployment to prove they landed.
+- id: ats008-final-q03
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Extend a list value without losing existing entries
+  source_readings:
+  - sections/section-010/module-01/course-03-re-running-and-auditing-the-install.md
+  prompt: A values file sets `config.excludeGroups` to a single new group. After `helm
+    upgrade --install`, which statement is true?
+  options:
+  - id: a
+    text: Helm refuses the upgrade because the list is shorter.
+    explanation: Helm does not compare list lengths.
+  - id: b
+    text: Only entries that start with `system:` are kept.
+    explanation: Helm has no such rule.
+  - id: c
+    text: The new group is appended to the chart's default list.
+    explanation: Helm does not merge lists.
+  - id: d
+    text: The chart's default entries are gone, because the new list replaces the
+      old one. Re-list every entry you want to keep.
+    explanation: Correct. Check the current list with `helm show values` before you
+      override it.
+  correct_option: d
+  explanation: A list is replaced as a whole. Copy the entries you want to keep into
+    your values file.
+- id: ats008-final-q04
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Install from the manifest and know what is missing
+  source_readings:
+  - sections/section-010/module-02/course-01-installing-from-the-release-manifest.md
+  prompt: A script installs Kyverno with `kubectl create -f` and a pinned `install.yaml`.
+    Later a colleague wants to read back the settings with `helm get values -a`. What
+    happens?
+  options:
+  - id: a
+    text: It prints the defaults of the newest chart.
+    explanation: Helm only reads releases that it knows.
+  - id: b
+    text: It fails, because a manifest install has no Helm release and no values.
+      The settings are in the file or in live objects.
+    explanation: Correct. A manifest install has no release record, so Helm has nothing
+      to read.
+  - id: c
+    text: It works after `helm repo update`.
+    explanation: Updating the repository list does not create a release.
+  - id: d
+    text: It prints the file, because `kubectl create` registers it with Helm.
+    explanation: "`kubectl create` knows nothing about Helm."
+  correct_option: b
+  explanation: The manifest gives every object, but no release, no values and no history.
+- id: ats008-final-q05
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Remove Kyverno completely and check for leftovers
+  source_readings:
+  - sections/section-010/module-02/course-02-uninstalling-and-cleaning-up.md
+  prompt: A cluster was cleaned with `helm uninstall kyverno -n kyverno`. Developers
+    now report slow or refused writes. Which check finds the likely cause, and what
+    is the fix?
+  options:
+  - id: a
+    text: "`kubectl get validatingwebhookconfigurations,mutatingwebhookconfigurations`.
+      A leftover Kyverno webhook configuration still calls a service that is gone,
+      so delete it."
+    explanation: Correct. The API server keeps calling the removed service until the
+      configuration is deleted.
+  - id: b
+    text: "`kubectl get clusterpolicy`. Delete every policy and the problem ends."
+    explanation: The policies are not the call line. A leftover webhook configuration
+      is.
+  - id: c
+    text: "`kubectl get crd`. Delete the `kyverno.io` definitions and the problem
+      ends."
+    explanation: The definitions do not call a service. Delete the webhook configurations
+      first.
+  - id: d
+    text: "`helm list -A --all`. If it is empty, the cause is the nodes."
+    explanation: An empty list only shows that the release is gone.
+  correct_option: a
+  explanation: Check the release, the webhook configurations, the definitions and
+    the namespace. Remove webhooks first, then definitions after a backup, then the
+    namespace.
+- id: ats008-final-q06
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Explain why a waiver outside the trusted namespace is ignored
+  source_readings:
+  - sections/section-020/module-01/course-02-policy-exceptions.md
+  prompt: A cluster runs the admission controller with `--enablePolicyException=true`
+    and `--exceptionNamespace=checkout`. A team files a correct `PolicyException`
+    for its Pod in the namespace `staging`, and the Pod is still refused. Why?
+  options:
+  - id: a
+    text: The waiver must be filed in the `kyverno` namespace.
+    explanation: This is not the best answer. The trusted namespace is the one named
+      by the flag, not `kyverno`.
+  - id: b
+    text: The waiver is outside the `checkout` namespace named by `--exceptionNamespace`,
+      so it is ignored.
+    explanation: Correct. A waiver on any other planet counts as if the feature were
+      off.
+  - id: c
+    text: "`--enablePolicyException` works only for `mutate` rules."
+    explanation: This is not the best answer. The flag works for any rule type that
+      a policy exception can name.
+  - id: d
+    text: A `PolicyException` needs a restart of the cluster before it applies.
+    explanation: This is not the best answer. Nothing restarts. The inspectors read
+      waivers live.
+  correct_option: b
+  explanation: The flag `--exceptionNamespace` names the only namespace whose waivers
+    Kyverno honours.
+- id: ats008-final-q07
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Recognise UpdateRequest as generated queue work
+  source_readings:
+  - sections/section-020/module-01/course-04-generated-crds-reports-and-queues.md
+  prompt: After a generate rule fires, an engineer finds `UpdateRequest` objects in
+    the `kyverno` namespace. What should the engineer do with them?
+  options:
+  - id: a
+    text: Edit them to change the generated resource.
+    explanation: This is not the best answer. They are internal queue entries. Edits
+      are not the supported way to change generated resources.
+  - id: b
+    text: Delete them to stop the policy from running.
+    explanation: This is not the best answer. Deleting queue entries does not stop
+      the policy. Edit or remove the policy instead.
+  - id: c
+    text: Apply them again, because they are policy files.
+    explanation: This is not the best answer. You do not author them. Kyverno does.
+  - id: d
+    text: Leave them alone. They are the queue that the background controller works
+      through.
+    explanation: Correct. They are generated plumbing, not authored objects.
+  correct_option: d
+  explanation: "`UpdateRequest` objects are work items created by Kyverno for generate
+    and mutate-existing work."
+- id: ats008-final-q08
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Write a cron schedule for a cleanup policy
+  source_readings:
+  - sections/section-020/module-02/course-01-cleanup-policies-the-salvage-schedule.md
+  prompt: A `ClusterCleanupPolicy` must run once a day at 03:30. Which `schedule`
+    is correct?
+  options:
+  - id: a
+    text: "`3:30`"
+    explanation: This is not the best answer. This is not a cron expression.
+  - id: b
+    text: "`* 3 30 * *`"
+    explanation: This is not the best answer. This reads as every minute during hour
+      3 on the 30th day of the month.
+  - id: c
+    text: "`daily`"
+    explanation: This is not the best answer. The field takes a cron expression, not
+      a word.
+  - id: d
+    text: "`30 3 * * *`"
+    explanation: Correct. Minute 30, hour 3, every day, every month, every weekday.
+  correct_option: d
+  explanation: The `schedule` of a cleanup policy is a cron expression with minute,
+    hour, day of month, month and weekday.
+- id: ats008-final-q09
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain why a TTL object can outlive its time by a short while
+  source_readings:
+  - sections/section-020/module-02/course-02-the-time-to-live-label.md
+  prompt: 'A ConfigMap carries `cleanup.kyverno.io/ttl: 30s`. Forty seconds after
+    creation it still exists, and the cleanup controller can delete ConfigMaps. What
+    is the most likely reason?'
+  options:
+  - id: a
+    text: The TTL check runs on `--ttlReconciliationInterval`, which defaults to one
+      minute, so the object waits for the next pass.
+    explanation: Correct. The label sets the time, the interval sets how often it
+      is checked.
+  - id: b
+    text: Labels with a TTL are ignored for ConfigMaps.
+    explanation: This is not the best answer. The label works on any kind that the
+      controller may delete.
+  - id: c
+    text: The `ttl` label needs the policy `ClusterCleanupPolicy`.
+    explanation: This is not the best answer. The TTL label needs no policy at all.
+  - id: d
+    text: Kyverno deletes TTL objects only on Sundays.
+    explanation: This is not the best answer. No such rule exists.
+  correct_option: a
+  explanation: Expiry is checked on the reconciliation interval, so removal can come
+    up to one interval after the time.
+- id: ats008-final-q10
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Find a failing object in a report by scope instead of report
+    name
+  source_readings:
+  - sections/section-020/module-03/course-02-reading-results-with-kubectl.md
+  prompt: An engineer runs `kubectl get policyreport -n hangar` and looks for a report
+    named `comet`. None exists, yet `comet` fails a rule. How does the engineer find
+    it?
+  options:
+  - id: a
+    text: Create a report named `comet` by hand.
+    explanation: This is not the best answer. Reports are generated by Kyverno. You
+      do not write them.
+  - id: b
+    text: Read `kubectl get policy -n hangar`.
+    explanation: This is not the best answer. A `Policy` holds rules, not results.
+  - id: c
+    text: Print `scope.name` and `summary.fail` of each report with JSONPath, because
+      the report name is the UID of the object.
+    explanation: Correct. The scope field names the checked object.
+  - id: d
+    text: Wait until Kyverno renames the report.
+    explanation: This is not the best answer. Report names do not change.
+  correct_option: c
+  explanation: Each report is named after the UID of its object. The `scope` field
+    shows the kind and name.
+- id: ats008-final-q11
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Explain an empty list of EphemeralReport objects
+  source_readings:
+  - sections/section-020/module-03/course-03-background-scans-and-intermediate-reports.md
+  prompt: "`kubectl get ephemeralreport -A` returns almost nothing on a cluster that
+    clearly has failing Deployments. What does that mean?"
+  options:
+  - id: a
+    text: Kyverno has stopped writing reports.
+    explanation: This is not the best answer. The failing results still appear in
+      `PolicyReport` objects.
+  - id: b
+    text: Nothing is wrong. The reports controller merges the scratch notes into report
+      cards and deletes them quickly.
+    explanation: Correct. Read `PolicyReport` for the results.
+  - id: c
+    text: Audit mode deletes all reports.
+    explanation: This is not the best answer. `Audit` records results and does not
+      delete reports.
+  - id: d
+    text: Ephemeral reports are kept forever and only hide when the policy is deleted.
+    explanation: This is not the best answer. They are short-lived by design.
+  correct_option: b
+  explanation: "`EphemeralReport` objects are intermediate. The final results are
+    in `PolicyReport` and `ClusterPolicyReport`."
+- id: ats008-final-q12
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Set a flag on the cleanup controller and confirm it landed
+  source_readings:
+  - sections/section-030/module-01/course-02-setting-flags-with-helm.md
+  prompt: A platform engineer must make the cleanup controller look for expired objects
+    every five minutes. Which sequence is correct?
+  options:
+  - id: a
+    text: Set `config.ttlReconciliationInterval=5m`, then wait for a restart.
+    explanation: This flag is not a ConfigMap value.
+  - id: b
+    text: Run `kubectl edit configmap kyverno` and add the flag.
+    explanation: A flag lives on the Deployment, and a hand edit of the ConfigMap
+      is lost at the next upgrade.
+  - id: c
+    text: Set `cleanupController.extraArgs.ttlReconciliationInterval=5m` with `helm
+      upgrade --reuse-values`, then read the `args` of `kyverno-cleanup-controller`.
+    explanation: Correct. The flag belongs to the cleanup controller, and the live
+      `args` prove it landed.
+  - id: d
+    text: Set `reportsController.extraArgs.ttlReconciliationInterval=5m`, then read
+      the ConfigMap.
+    explanation: The reports controller does not own this flag, and a flag is not
+      in the ConfigMap.
+  correct_option: c
+  explanation: Set a flag under the right crew's `extraArgs`, then read the Deployment's
+    live `args`.
+- id: ats008-final-q13
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Predict the nesting error for the admission controller
+  source_readings:
+  - sections/section-030/module-01/course-02-setting-flags-with-helm.md
+  prompt: "`helm template` with `--set admissionController.extraArgs.webhookTimeout=15`
+    prints no `webhookTimeout` line. What does that show?"
+  options:
+  - id: a
+    text: The flag needs the dashes in the value name.
+    explanation: The chart reads a map of names and values, and it adds the dashes.
+  - id: b
+    text: The release must be installed before `helm template` can show flags.
+    explanation: "`helm template` renders without a release."
+  - id: c
+    text: Kyverno ignores flags that are shorter than the default.
+    explanation: Kyverno does not compare values. The chart simply never reads this
+      path.
+  - id: d
+    text: The value sits where no template reads it. The right path is `admissionController.container.extraArgs`.
+    explanation: Correct. The empty search is the sign of a wrong path.
+  correct_option: d
+  explanation: The admission controller is the one crew that keeps `extraArgs` under
+    `container`. An empty search in `helm template` is the cheapest sign of a wrong
+    path.
+- id: ats008-final-q14
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Choose between a flag and a ConfigMap value
+  source_readings:
+  - sections/section-030/module-02/course-01-reading-the-kyverno-configmap.md
+  - sections/section-030/module-02/course-02-changing-the-configmap-with-helm.md
+  prompt: An operator wants a new service account excluded from Kyverno checks right
+    now, with no Pod restart. Which change fits?
+  options:
+  - id: a
+    text: Delete the ConfigMap `kyverno`.
+    explanation: The controllers would lose their settings, and Helm would have to
+      create it again.
+  - id: b
+    text: Add the user to `config.excludeUsernames` with `helm upgrade --reuse-values`.
+    explanation: Correct. The ConfigMap is read live, so no Pod restarts.
+  - id: c
+    text: Add `--excludeUsernames` to `admissionController.container.extraArgs`.
+    explanation: That is not a flag of the admission controller.
+  - id: d
+    text: Scale the admission controller to zero replicas.
+    explanation: With no replicas, the doors have no crew, and the failure policy
+      decides what happens to every launch.
+  correct_option: b
+  explanation: Exclude lists live in the ConfigMap, which the crews read live.
+- id: ats008-final-q15
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Predict what happens to the default filters
+  source_readings:
+  - sections/section-030/module-02/course-02-changing-the-configmap-with-helm.md
+  prompt: A values file sets `config.resourceFilters` with one line for `mission-ops`.
+    The next day Kyverno starts checking its own Secrets and the cluster's core objects.
+    Why?
+  options:
+  - id: a
+    text: Setting `config.resourceFilters` replaced the whole default list of more
+      than a hundred entries.
+    explanation: Correct. A list you set replaces the old list. The helper lists add
+      one entry safely.
+  - id: b
+    text: Kyverno rebuilds the filters every day from the policies.
+    explanation: Filters come from the values, not from the policies.
+  - id: c
+    text: The new filter line turns on `generateSuccessEvents`.
+    explanation: The two settings are separate.
+  - id: d
+    text: The background controller overrides the ConfigMap at night.
+    explanation: No controller writes the ConfigMap.
+  correct_option: a
+  explanation: Use `resourceFiltersIncludeNamespaces` and its three siblings to add
+    or remove single entries.
+- id: ats008-final-q16
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Choose the failure policy for a rule that must always hold
+  source_readings:
+  - sections/section-030/module-03/course-01-webhook-configurations-and-failure-policy.md
+  prompt: A rule says `no privileged Pods` and must hold even during an admission
+    controller restart. Another rule only audits labels. How should the failure policies
+    be set?
+  options:
+  - id: a
+    text: "`Ignore` for both, because the controller restarts quickly."
+    explanation: Launches during the restart would then pass the strict rule unchecked.
+  - id: b
+    text: "`Fail` for both, and turn on `forceFailurePolicyIgnore` to be safe."
+    explanation: That flag forces every door to `Ignore`, so the strict rule would
+      not hold.
+  - id: c
+    text: The failure policy cannot be set per policy.
+    explanation: A policy can set its own in the `webhookConfiguration` block.
+  - id: d
+    text: "`Fail` for the privileged rule and `Ignore` for the audit rule, each in
+      its own `webhookConfiguration`."
+    explanation: Correct. The strict rule must refuse launches when nobody answers,
+      and the audit rule may let them through.
+  correct_option: d
+  explanation: Keep `Fail` for rules that must hold, use `Ignore` for advice, and
+    know that `forceFailurePolicyIgnore` overrides both.
+- id: ats008-final-q17
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Manage the webhook certificate after a renewal question
+  source_readings:
+  - sections/section-030/module-03/course-03-certificates-for-the-webhooks.md
+  prompt: A security review asks how the admission controller certificate is renewed
+    when the chart is installed with `admissionController.createSelfSignedCert=true`,
+    and how the doors keep trusting it. What is the correct answer?
+  options:
+  - id: a
+    text: cert-manager renews it, because that mode is the same as `certManager.enabled`.
+    explanation: The two modes are separate. cert-manager needs `certManager.enabled`.
+  - id: b
+    text: Nobody renews it. You must replace the secrets before they expire, and the
+      CA in the webhook configurations must still match.
+    explanation: Correct. Helm creates the secrets once, and the end date is your
+      job.
+  - id: c
+    text: The API server renews it, because it trusts the CA.
+    explanation: The API server only checks the certificate. It never renews it.
+  - id: d
+    text: Kyverno renews it as in the default mode, and the CA is regenerated each
+      time.
+    explanation: In the self-signed mode Kyverno does not renew the certificate.
+  correct_option: b
+  explanation: The self-signed mode is not renewed. Plan the replacement before the
+    end date, or use the default mode or cert-manager.
+- id: ats008-final-q18
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Diagnose a generate rule that cannot create its target
+  source_readings:
+  - sections/section-040/module-01/course-02-granting-extra-permissions-safely.md
+  prompt: A platform team applies a ClusterPolicy that should create a `LimitRange`
+    in every new namespace. After an upgrade of the chart's values, no namespace gets
+    one and an `UpdateRequest` shows a forbidden error. What do they check first?
+  options:
+  - id: a
+    text: Whether the cleanup controller has a schedule.
+    explanation: Cleanup removes objects and plays no part in building them.
+  - id: b
+    text: Whether the background controller's service account may create `limitranges`,
+      with `can-i` and `--as`.
+    explanation: Correct. The background controller builds generated objects, so its
+      permission on the kind is the first thing to prove.
+  - id: c
+    text: Whether the admission controller has `view`.
+    explanation: Admission checks requests and does not build objects.
+  - id: d
+    text: Whether the reports controller has `watch` on limitranges.
+    explanation: The reports controller files reports and does not build objects.
+  correct_option: b
+  explanation: Find the crew that does the job, then ask `can-i` for its service account.
+- id: ats008-final-q19
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Choose the aggregation label for a given job
+  source_readings:
+  - sections/section-040/module-02/course-02-when-a-controller-lacks-a-permission.md
+  prompt: Existing Beacon objects must be scanned in the background and appear in
+    policy reports. Which controller needs a new card, and with which label?
+  options:
+  - id: a
+    text: 'The cleanup controller, with `rbac.kyverno.io/aggregate-to-cleanup-controller:
+      "true"`.'
+    explanation: The cleanup controller removes objects. It does not scan them for
+      reports.
+  - id: b
+    text: 'The admission controller, with `rbac.kyverno.io/aggregate-to-admission-controller:
+      "true"`.'
+    explanation: Admission checks new requests from the request itself.
+  - id: c
+    text: 'The reports controller, with `rbac.kyverno.io/aggregate-to-reports-controller:
+      "true"`.'
+    explanation: Correct. The records office lists and watches existing objects, so
+      it needs `get`, `list` and `watch` on the kind.
+  - id: d
+    text: 'The background controller, with `rbac.kyverno.io/aggregate-to-background-controller:
+      "true"`.'
+    explanation: The background controller builds and repairs objects. Reports belong
+      to the reports controller.
+  correct_option: c
+  explanation: Match the job to the crew and the crew to its label.
+- id: ats008-final-q20
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Give the cleanup controller only the permission it needs
+  source_readings:
+  - sections/section-040/module-02/course-02-when-a-controller-lacks-a-permission.md
+  prompt: A cleanup policy must delete old Jobs in the namespace `batch`. Which grant
+    is correct and narrow?
+  options:
+  - id: a
+    text: 'A ClusterRole with `rbac.kyverno.io/aggregate-to-cleanup-controller: "true"`
+      that allows `get`, `list` and `delete` on `jobs` in the `batch` API group.'
+    explanation: Correct. It names the kind with its group and the verbs the crew
+      needs, for the right controller.
+  - id: b
+    text: 'The same rule with `apiGroups: [""]`.'
+    explanation: Jobs are in the `batch` group. The core group does not contain them.
+  - id: c
+    text: The same rule with the background label.
+    explanation: The background label extends the wrong controller.
+  - id: d
+    text: 'A rule with `resources: ["*"]` and `verbs: ["*"]`.'
+    explanation: It works and breaks least privilege.
+  correct_option: a
+  explanation: Right group, right kind, right verbs, right label.
+- id: ats008-final-q21
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Decide between a labelled ClusterRole and chart values
+  source_readings:
+  - sections/section-040/module-02/course-03-chart-values-for-permissions-and-least-privilege.md
+  prompt: A team wants a permission grant that `helm get values` shows and that survives
+    `helm upgrade --reuse-values`. Which option fits?
+  options:
+  - id: a
+    text: Apply a ClusterRole with `kubectl apply` and nothing else.
+    explanation: It works at once, but it is outside the release and is not shown
+      by `helm get values`.
+  - id: b
+    text: Edit the `:core` card with `kubectl edit`.
+    explanation: The chart writes it back on upgrade.
+  - id: c
+    text: Bind the service account to `cluster-admin`.
+    explanation: This is unlimited power and not least privilege.
+  - id: d
+    text: Set `<controller>.rbac.clusterRole.extraResources` in the release values.
+    explanation: Correct. The rules become part of the release, and the chart builds
+      the `:additional` card from them.
+  correct_option: d
+  explanation: Chart values keep the grant with the release. A labelled ClusterRole
+    is quick and outside it.
+- id: ats008-final-q22
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Audit controller permissions
+  source_readings:
+  - sections/section-040/module-02/course-03-chart-values-for-permissions-and-least-privilege.md
+  - sections/section-040/module-02/course-01-what-each-controller-may-do-by-default.md
+  prompt: During a review you want to list every grant that someone added to the cleanup
+    controller on top of the chart's cards. What do you look at?
+  options:
+  - id: a
+    text: ClusterRoles with the label `rbac.kyverno.io/aggregate-to-cleanup-controller=true`,
+      and the `kyverno:cleanup-controller:additional` card if the chart value is set.
+    explanation: Correct. Both are the places a grant is added. The shipped `:core`
+      card is the baseline.
+  - id: b
+    text: Only the Deployment of the cleanup controller.
+    explanation: The Deployment says nothing about RBAC.
+  - id: c
+    text: Only the ConfigMap `kyverno`.
+    explanation: The notice board holds Kyverno settings, not RBAC cards.
+  - id: d
+    text: Only the namespaces of the cluster.
+    explanation: Namespaces say nothing about grants to a service account.
+  correct_option: a
+  explanation: Added grants are labelled ClusterRoles or values-built `:additional`
+    cards.
+- id: ats008-final-q23
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain what extra replicas buy the background, reports and
+    cleanup controllers
+  source_readings:
+  - sections/section-050/module-01/course-01-why-replicas-behave-differently.md
+  prompt: 'The reports controller falls behind on a large cluster. An engineer proposes
+    `reportsController.replicas: 4`. What is the right assessment?'
+  options:
+  - id: a
+    text: It splits the report work in four parts and fixes the delay.
+    explanation: Reports processing is done by one lease holder at a time.
+  - id: b
+    text: Helm rejects values above three.
+    explanation: Helm accepts them.
+  - id: c
+    text: Only the lease holder processes reports, so extra replicas add failover
+      but not speed. Tune the controller's own settings or resources instead.
+    explanation: Correct. More Pods of a leader-elected controller do not add throughput.
+  - id: d
+    text: The admission controller takes over the report work.
+    explanation: The admission controller does not process reports.
+  correct_option: c
+  explanation: Reports replicas add failover only.
+- id: ats008-final-q24
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Say when the chart creates a PodDisruptionBudget
+  source_readings:
+  - sections/section-050/module-02/course-03-disruption-budgets-and-spreading-replicas.md
+  prompt: 'A Kyverno release runs one admission replica and has no budget. You upgrade
+    it to `admissionController.replicas: 2` and change nothing else. What do you find?'
+  options:
+  - id: a
+    text: 'A PodDisruptionBudget for the admission controller now exists with `minAvailable:
+      1`, because the chart creates one when replicas exceed one.'
+    explanation: Correct. The chart creates the budget when `enabled` is true or replicas
+      are above one, and `minAvailable` defaults to 1.
+  - id: b
+    text: Still no budget, because `enabled` is `false`.
+    explanation: More than one replica also creates the budget.
+  - id: c
+    text: 'A budget with `maxUnavailable: 2`.'
+    explanation: That key is empty by default.
+  - id: d
+    text: Helm fails, because budgets need three replicas.
+    explanation: No such rule exists.
+  correct_option: a
+  explanation: The chart creates the budget for more than one replica.
+- id: ats008-final-q25
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Apply a values file with helm upgrade without losing earlier
+    settings
+  source_readings:
+  - sections/section-050/module-02/course-01-sizing-replicas-and-resources.md
+  prompt: A release was installed with `--set admissionController.replicas=3`. Later
+    someone runs `helm upgrade kyverno kyverno/kyverno -n kyverno -f sizing.yaml`,
+    and the file only sets resources. The admission Deployment now has one replica.
+    Why?
+  options:
+  - id: a
+    text: Resource changes always reset replicas.
+    explanation: They do not; the cause is how Helm merges values.
+  - id: b
+    text: The chart caps replicas at one when resources are set.
+    explanation: It has no such rule.
+  - id: c
+    text: Autoscaling turned itself on.
+    explanation: It is off by default.
+  - id: d
+    text: Without `--reuse-values`, an upgrade starts from the chart defaults plus
+      the new file, so the earlier `--set` value is gone. Put every value in the file
+      or add `--reuse-values`.
+    explanation: Correct. The empty default for replicas means one Pod.
+  correct_option: d
+  explanation: helm upgrade -f drops earlier --set values unless you reuse them.
+- id: ats008-final-q26
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Name the values that set resources for each controller
+  source_readings:
+  - sections/section-050/module-02/course-01-sizing-replicas-and-resources.md
+  prompt: Admission Pods are killed for exceeding memory on a cluster with a large
+    policy set. Which change is the most direct fix?
+  options:
+  - id: a
+    text: Set `admissionController.container.resources.limits.cpu` to a low number.
+    explanation: This adds a CPU limit, which Kyverno recommends against, and does
+      not fix memory.
+  - id: b
+    text: Raise the memory request and limit under `admissionController.container.resources`.
+    explanation: Correct. The container that holds all policies needs more memory.
+  - id: c
+    text: Raise `backgroundController.resources` memory.
+    explanation: That is a different Deployment.
+  - id: d
+    text: 'Set `admissionController.replicas: 0`.'
+    explanation: The chart rejects zero replicas.
+  correct_option: b
+  explanation: Raise the admission container's memory.
+- id: ats008-final-q27
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Say what a one-node cluster can and cannot prove about spreading
+  source_readings:
+  - sections/section-050/module-02/course-03-disruption-budgets-and-spreading-replicas.md
+  prompt: On a one-node kind cluster you add a `DoNotSchedule` hostname spread constraint
+    to a three-replica admission controller. All three Pods start. What does this
+    prove?
+  options:
+  - id: a
+    text: That the Pods are spread over three nodes.
+    explanation: The cluster has one node.
+  - id: b
+    text: That the soft anti-affinity is now a hard rule.
+    explanation: The constraint is a separate setting.
+  - id: c
+    text: Only that the constraint is on the Deployment and is satisfiable. With one
+      place, the rule always holds, so it proves no spreading.
+    explanation: Correct. Check the placement on a multi-node cluster.
+  - id: d
+    text: That the Pods will survive a node drain.
+    explanation: A drain of the only node evicts all of them.
+  correct_option: c
+  explanation: One place means the rule always holds.
+- id: ats008-final-q28
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain why a manifest install cannot be upgraded in place
+  source_readings:
+  - sections/section-060/module-01/course-02-manifest-upgrades-and-post-upgrade-validation.md
+  prompt: A new platform engineer finds that `helm list -n kyverno` shows nothing,
+    yet Kyverno is running in the `kyverno` namespace. The team wants to move to a
+    newer Kyverno. What does the empty list tell her?
+  options:
+  - id: a
+    text: The install came from a manifest, so there is no `helm upgrade`; the way
+      forward is deleting with the old `install.yaml` and creating with the new one.
+    explanation: Correct. No release exists, so there is no flight record for Helm
+      to use.
+  - id: b
+    text: Helm hides releases in the `kyverno` namespace.
+    explanation: Helm lists releases in the namespace you name.
+  - id: c
+    text: The release was rolled back and deleted.
+    explanation: A rollback adds a revision and keeps the release.
+  - id: d
+    text: She can run `helm upgrade --install` and Helm will adopt every object without
+      conflict.
+    explanation: Helm refuses to take over objects it did not create unless told to.
+  correct_option: a
+  explanation: No Helm release means the install came from a manifest, and manifests
+    are replaced, not upgraded.
+- id: ats008-final-q29
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Explain why a normal helm upgrade updates Kyverno's CRDs
+  source_readings:
+  - sections/section-060/module-01/course-01-the-helm-upgrade-path.md
+  prompt: During a review, a colleague says the chart cannot update Kyverno's CRDs
+    because Helm never upgrades CRDs. What is the best reply?
+  options:
+  - id: a
+    text: He is right, so every upgrade needs a hand-applied CRD file.
+    explanation: That rule belongs to charts that use a `crds/` folder.
+  - id: b
+    text: 'He is wrong for this chart: Kyverno''s CRDs are templates in a CRD sub-chart
+      switched on by `crds.install`, so `helm upgrade` carries their changes.'
+    explanation: Correct. The CRDs are part of the release.
+  - id: c
+    text: He is right, but `helm rollback` will update them instead.
+    explanation: A rollback puts back the CRDs of the chosen revision, which is a
+      different job.
+  - id: d
+    text: He is wrong because the Kyverno command line updates CRDs automatically.
+    explanation: The command line's `migrate` is for stored objects.
+  correct_option: b
+  explanation: The chart owns the CRDs, so a normal upgrade updates them.
+- id: ats008-final-q30
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Roll a release back and read the history afterwards
+  source_readings:
+  - sections/section-060/module-02/course-01-reading-the-history-and-rolling-back.md
+  prompt: After a failed upgrade, `helm history` lists revisions 1 (superseded), 2
+    (deployed, but Pods fail to pull an image). The on-call engineer must return to
+    a working state and prove it. Which plan is right?
+  options:
+  - id: a
+    text: "`kubectl delete pod` on the failing Pod, then close the ticket."
+    explanation: The release would keep the same mistake for the next rollout.
+  - id: b
+    text: "`helm rollback kyverno 1 -n kyverno --wait`, then `helm history` to see
+      a new revision 3 marked deployed, and check the Pods."
+    explanation: Correct. This returns to the good revision and proves it with the
+      record and the ships.
+  - id: c
+    text: "`helm uninstall kyverno` and install again without a backup."
+    explanation: It removes the release and its history.
+  - id: d
+    text: Edit the Deployment image by hand with `kubectl edit` and leave the release
+      as it is.
+    explanation: The release record no longer matches the cluster.
+  correct_option: b
+  explanation: Roll back with Helm, then read the record and the Pods.
+- id: ats008-final-q31
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Back up policies and exceptions as YAML, and say what must be
+    removed before restoring
+  source_readings:
+  - sections/section-060/module-02/course-02-what-a-rollback-keeps-and-backing-up-policies.md
+  prompt: Before an upgrade, an administrator saves `kubectl get clusterpolicies.kyverno.io
+    -o yaml > policy-backup.yaml`. After the upgrade a policy is missing and `kubectl
+    create -f policy-backup.yaml` is refused. Which statement is true?
+  options:
+  - id: a
+    text: The backup is empty because Helm owns policies.
+    explanation: Policies are not part of the release, and the dump held them.
+  - id: b
+    text: The file is a dump with server-set fields such as `resourceVersion` and
+      `status`; remove them and create it again.
+    explanation: Correct. A new object cannot carry fields the API server sets.
+  - id: c
+    text: "`helm rollback` would have restored the policy."
+    explanation: A rollback does not touch policies.
+  - id: d
+    text: The backup also needs `PolicyException` objects, but only `ClusterPolicy`
+      files can be created.
+    explanation: Both kinds can be created from clean files; they simply need their
+      own backup command.
+  correct_option: b
+  explanation: A cluster dump is evidence. Clean it before you restore from it.
+- id: ats008-final-q32
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Choose between reuse, reset and reset-then-reuse
+  source_readings:
+  - sections/section-060/module-02/course-03-values-version-skew-and-the-pre-upgrade-checklist.md
+  prompt: An upgrade is run with `helm upgrade kyverno kyverno/kyverno -n kyverno
+    --reset-values --set backgroundController.replicas=2`. Earlier the release had
+    `admissionController.replicas=3`. What is the admission controller replica count
+    afterwards?
+  options:
+  - id: a
+    text: 3, because earlier values are always kept.
+    explanation: "`--reset-values` discards them."
+  - id: b
+    text: 2, because the newest `--set` applies to all controllers.
+    explanation: It applies only to its own key.
+  - id: c
+    text: The chart default, because `--reset-values` goes back to the chart's built-in
+      values plus what you typed now.
+    explanation: Correct. The help text says it resets the values to the ones built
+      into the chart.
+  - id: d
+    text: The upgrade fails because a value is missing.
+    explanation: Helm does not require old values.
+  correct_option: c
+  explanation: "`--reset-values` drops every earlier value that is not typed again."

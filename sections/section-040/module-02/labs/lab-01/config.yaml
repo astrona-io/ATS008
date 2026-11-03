@@ -1,0 +1,40 @@
+# Status: UNTESTED (written statically, not yet run against a cluster).
+metadata:
+  name: "ats-008-lab-018"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-kyverno"
+      description: "Installs Kyverno onto the kind cluster via Helm at default values"
+      type: "file"
+      source: "bootstrap/01-install-kyverno.sh"
+    - name: "seed-scrap"
+      description: "Creates the scrap namespace with two expired ConfigMaps and one ConfigMap to keep"
+      type: "file"
+      source: "bootstrap/02-seed-scrap.sh"
+
+validation:
+  scripts:
+    - name: "cleanup-clusterrole"
+      description: "A new ClusterRole carries the cleanup aggregation label and allows delete on configmaps, and the shipped cleanup core role is untouched"
+      type: "file"
+      source: "validation/validate-clusterrole.sh"
+      hint: "Label the new ClusterRole rbac.kyverno.io/aggregate-to-cleanup-controller: \"true\" and give it get, list and delete on configmaps in the core group."
+    - name: "cleanup-permission"
+      description: "The cleanup controller may delete ConfigMaps in scrap and may not delete Secrets or Pods"
+      type: "file"
+      source: "validation/validate-permission.sh"
+      hint: "Ask kubectl auth can-i delete configmaps -n scrap --as=system:serviceaccount:kyverno:kyverno-cleanup-controller. Grant only configmaps."
+    - name: "cleanup-policy"
+      description: "The ClusterCleanupPolicy purge-expired-notes exists and targets expired ConfigMaps in scrap"
+      type: "file"
+      source: "validation/validate-policy.sh"
+      hint: "Use kind ClusterCleanupPolicy, apiVersion kyverno.io/v2, a schedule, and match ConfigMap in scrap with the label expired: \"true\"."
+    - name: "cleanup-effect"
+      description: "The expired ConfigMaps are gone and keep-note is still there"
+      type: "file"
+      source: "validation/validate-effect.sh"
+      hint: "The schedule runs once a minute. Wait and run kubectl get configmap -n scrap."

@@ -1,0 +1,18 @@
+# Installing from Manifests and Removing Kyverno Cleanly (PLAYGROUND), module 02.
+# A clean sandbox with no task and no grading: Kyverno is installed with Helm
+# (release kyverno, namespace kyverno, latest chart) and one ClusterPolicy,
+# require-owner-label (Enforce, Pods need an owner label), is applied so that
+# the effects of removal are visible.
+#
+# Status: UNTESTED (written statically, not yet run against a cluster).
+metadata:
+  name: ats-008-playground-010-02
+  docs:
+    guide: docs/overview.md
+
+bootstrap:
+  init:
+    - name: "prepare"
+      description: "Installs Kyverno with Helm and applies the require-owner-label ClusterPolicy"
+      type: "file"
+      source: "bootstrap/prepare.sh"
